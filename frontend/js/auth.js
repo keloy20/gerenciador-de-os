@@ -6,7 +6,7 @@ async function login() {
   msg.innerText = "Entrando...";
 
   try {
-    const res = await fetch("http://192.168.0.7:3000/auth/login", {
+    const res = await fetch("https://gerenciador-de-os.onrender.com/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

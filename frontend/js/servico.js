@@ -1,4 +1,4 @@
-const API = "http://192.168.0.7:3000";
+const API = "https://gerenciador-de-os.onrender.com/";
 const token = localStorage.getItem("token");
 const servicoId = localStorage.getItem("servicoId");
 
