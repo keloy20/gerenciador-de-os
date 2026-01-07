@@ -1,4 +1,4 @@
-const API = "https://gerenciador-de-os.onrender.com/";
+const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
 if (!token) {
@@ -18,24 +18,34 @@ async function carregarDashboard() {
       }
     });
 
-    const data = await res.json();
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (e) {
+      console.error("Erro ao converter JSON", e);
+      lista.innerHTML = "Erro ao ler resposta do servidor";
+      return;
+    }
 
     if (!res.ok) {
       lista.innerHTML = data.error || "Erro ao carregar serviços";
       return;
     }
 
+    const atual = data.atual || null;
+    const hoje = Array.isArray(data.hoje) ? data.hoje : [];
+
     lista.innerHTML = "";
 
-   
+    // =========================
     // SERVIÇO EM ANDAMENTO
-    
-    if (data.atual) {
+    // =========================
+    if (atual) {
       const div = document.createElement("div");
       div.innerHTML = `
         <h3>🔧 Serviço em andamento</h3>
-        <strong>${data.atual.cliente}</strong><br>
-        <button onclick="abrirServico('${data.atual._id}')">Abrir serviço</button>
+        <strong>${atual.cliente || "Cliente não informado"}</strong><br>
+        <button onclick="abrirServico('${atual._id}')">Abrir serviço</button>
         <hr>
       `;
       lista.appendChild(div);
@@ -44,15 +54,15 @@ async function carregarDashboard() {
     // =========================
     // SERVIÇOS DE HOJE
     // =========================
-    if (data.hoje.length > 0) {
+    if (hoje.length > 0) {
       const titulo = document.createElement("h3");
       titulo.innerText = "📅 Serviços de hoje";
       lista.appendChild(titulo);
 
-      data.hoje.forEach(servico => {
+      hoje.forEach(servico => {
         const div = document.createElement("div");
         div.innerHTML = `
-          <strong>${servico.cliente}</strong> - ${servico.status}<br>
+          <strong>${servico.cliente || "Cliente não informado"}</strong> - ${servico.status || ""}<br>
           <button onclick="abrirServico('${servico._id}')">Ver</button>
           <hr>
         `;
@@ -60,11 +70,12 @@ async function carregarDashboard() {
       });
     }
 
-    if (!data.atual && data.hoje.length === 0) {
+    if (!atual && hoje.length === 0) {
       lista.innerHTML = "Nenhum serviço hoje.";
     }
 
   } catch (err) {
+    console.error("ERRO DASHBOARD:", err);
     lista.innerHTML = "Erro de conexão com o servidor";
   }
 }
