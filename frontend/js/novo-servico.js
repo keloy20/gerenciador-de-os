@@ -44,7 +44,7 @@ function selecionarUnidade(unidade) {
 }
 
 // ===============================
-// CRIAR SERVIÇO (TÉCNICO)
+// CRIAR SERVIÇO (TÉCNICO) – SEM TECNICOID
 // ===============================
 async function criarServico() {
   const cliente = document.getElementById("cliente").value;
