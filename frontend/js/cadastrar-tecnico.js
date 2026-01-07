@@ -1,4 +1,4 @@
-const API = "https://gerenciador-de-os.onrender.com/";
+const API = "https://gerenciador-de-os.onrender.com";
 
 function cadastrarTecnico() {
   const token = localStorage.getItem("token");
@@ -9,8 +9,8 @@ function cadastrarTecnico() {
   const senha = document.getElementById("senha").value;
   const msg = document.getElementById("msg");
 
-  if (!token) {
-    msg.innerText = "Você não está logado como admin.";
+  if (!nome || !email || !telefone || !senha) {
+    msg.innerText = "Preencha todos os campos";
     return;
   }
 
