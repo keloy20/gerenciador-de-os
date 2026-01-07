@@ -3,12 +3,33 @@ const token = localStorage.getItem("token");
 
 const inputCliente = document.getElementById("cliente");
 const listaUnidades = document.getElementById("listaUnidades");
+const campoUnidade = document.getElementById("unidade");
+const campoMarca = document.getElementById("marca");
 
-inputCliente.addEventListener("input", buscarUnidades);
+inputCliente.addEventListener("input", onClienteChange);
 
-async function buscarUnidades() {
-  const nome = inputCliente.value.trim();
+function onClienteChange() {
+  const nome = inputCliente.value.trim().toLowerCase();
 
+  // 🔹 Se NÃO for timao → esconde unidade/marca e limpa
+  if (nome !== "timao") {
+    listaUnidades.innerHTML = "";
+    campoUnidade.value = "";
+    campoMarca.value = "";
+
+    campoUnidade.parentElement.style.display = "none";
+    campoMarca.parentElement.style.display = "none";
+    return;
+  }
+
+  // 🔹 Se for timao → mostra campos e busca unidades
+  campoUnidade.parentElement.style.display = "block";
+  campoMarca.parentElement.style.display = "block";
+
+  buscarUnidades(nome);
+}
+
+async function buscarUnidades(nome) {
   if (nome.length < 2) {
     listaUnidades.innerHTML = "";
     return;
@@ -38,24 +59,30 @@ async function buscarUnidades() {
 }
 
 function selecionarUnidade(unidade) {
-  document.getElementById("unidade").value = unidade.nome;
-  document.getElementById("marca").value = unidade.marca;
+  campoUnidade.value = unidade.nome;
+  campoMarca.value = unidade.marca;
   listaUnidades.innerHTML = "";
 }
 
 // ===============================
-// CRIAR SERVIÇO (TÉCNICO) – SEM TECNICOID
+// CRIAR SERVIÇO (TÉCNICO)
 // ===============================
 async function criarServico() {
-  const cliente = document.getElementById("cliente").value;
-  const unidade = document.getElementById("unidade").value;
-  const marca = document.getElementById("marca").value;
-  const endereco = document.getElementById("endereco").value;
-  const tipoServico = document.getElementById("tipoServico").value;
+  const cliente = inputCliente.value.trim();
+  const unidade = campoUnidade.value.trim();
+  const marca = campoMarca.value.trim();
+  const endereco = document.getElementById("endereco").value.trim();
+  const tipoServico = document.getElementById("tipoServico").value.trim();
   const msg = document.getElementById("msg");
 
-  if (!cliente || !unidade || !marca || !endereco || !tipoServico) {
-    msg.innerText = "Preencha todos os campos";
+  if (!cliente || !endereco || !tipoServico) {
+    msg.innerText = "Preencha cliente, endereço e tipo de serviço";
+    return;
+  }
+
+  // 🔴 Se for TIMAO e não tiver unidade/marca → bloqueia
+  if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
+    msg.innerText = "Selecione a unidade do Timão";
     return;
   }
 
@@ -68,8 +95,8 @@ async function criarServico() {
       },
       body: JSON.stringify({
         cliente,
-        unidade,
-        marca,
+        unidade: cliente.toLowerCase() === "timao" ? unidade : "",
+        marca: cliente.toLowerCase() === "timao" ? marca : "",
         endereco,
         tipoServico
       })

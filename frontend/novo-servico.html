@@ -4,6 +4,32 @@
   <meta charset="UTF-8">
   <title>Novo Serviço</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .autocomplete-list {
+      list-style: none;
+      padding: 0;
+      margin: 5px 0 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+      background: #fff;
+    }
+
+    .autocomplete-list li {
+      padding: 8px 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    .autocomplete-list li:hover {
+      background: #f1f1f1;
+    }
+
+    .campo-unidade {
+      display: none; /* começa escondido */
+    }
+  </style>
 </head>
 <body>
 
@@ -23,19 +49,24 @@
     <input 
       type="text" 
       id="cliente" 
-      placeholder="Digite o nome do cliente (ex: timao)"
+      placeholder="Ex: timao ou nome do cliente"
       autocomplete="off"
     >
 
-    <!-- LISTA UNIDADES -->
+    <!-- LISTA UNIDADES (autocomplete) -->
     <ul id="listaUnidades" class="autocomplete-list"></ul>
 
-    <!-- UNIDADE E MARCA -->
-    <label>Unidade</label>
-    <input type="text" id="unidade" readonly>
+    <!-- UNIDADE -->
+    <div class="campo-unidade" id="boxUnidade">
+      <label>Unidade</label>
+      <input type="text" id="unidade" readonly>
+    </div>
 
-    <label>Marca</label>
-    <input type="text" id="marca" readonly>
+    <!-- MARCA -->
+    <div class="campo-unidade" id="boxMarca">
+      <label>Marca</label>
+      <input type="text" id="marca" readonly>
+    </div>
 
     <!-- ENDEREÇO -->
     <label>Endereço</label>
