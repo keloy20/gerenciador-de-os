@@ -1,3 +1,5 @@
+const API = "https://gerenciador-de-os.onrender.com";
+
 async function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
@@ -6,7 +8,7 @@ async function login() {
   msg.innerText = "Entrando...";
 
   try {
-    const res = await fetch("https://gerenciador-de-os.onrender.com/", {
+    const res = await fetch(`${API}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -31,6 +33,7 @@ async function login() {
     }
 
   } catch (err) {
+    console.error(err);
     msg.innerText = "Erro de conexão com o servidor";
   }
 }
