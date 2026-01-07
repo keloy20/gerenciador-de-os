@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+
+
+  <header>Painel do Admin</header>
+
+  <div class="menu">
+    <a href="cadastrar-tecnico.html">Cadastrar Técnico</a>
+    <a href="criar-servico-admin.html">Novo Serviço</a>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h3>Serviços do Dia</h3>
+      <input 
+  type="text" 
+  id="busca" 
+  placeholder="Buscar por cliente ou técnico..."
+  onkeyup="filtrarServicos()"
+  style="width: 100%; padding: 8px; margin-bottom: 10px;"
+>
+
+      <div id="listaAdmin"></div>
+    </div>
+  </div>
+
+  <button onclick="window.history.back()" class="btn-voltar">⬅ Voltar</button>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Novo Serviço</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>Gerenciador de Serviços</header>
+
+<div class="menu">
+  <a href="dashboard.html">Dashboard</a>
+</div>
+
+
+<div class="top-bar">Novo Serviço</div>
+
+<div class="card">
+  <input id="cliente" placeholder="Cliente">
+  <input id="endereco" placeholder="Endereço">
+  <input id="tipoServico" placeholder="Tipo de serviço">
+  <select id="tecnico"></select>
+  <button onclick="criarServico()">Enviar para Técnico</button>
+  <p id="msg"></p>
+</div>
+
+<button onclick="window.history.back()" class="btn-voltar">⬅ Voltar</button>
+
+
+<script src="js/criar-servico-admin.js"></script>
+</body>
+</html>

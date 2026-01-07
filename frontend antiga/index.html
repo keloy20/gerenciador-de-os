@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciador de Projetos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Gerenciador de Projetos</h1>
+  </header>
+
+  <section id="createProjectSection">
+    <h2>Criar Projeto</h2>
+    <form id="createProjectForm">
+      <input type="text" id="cliente" placeholder="Cliente" required>
+      <input type="text" id="endereco" placeholder="Endereço">
+      <input type="text" id="tipoServico" placeholder="Tipo de Serviço">
+      <button type="submit">Criar Projeto</button>
+    </form>
+  </section>
+
+  <section id="projectsSection">
+    <h2>Projetos</h2>
+    <div id="projectsList"></div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>

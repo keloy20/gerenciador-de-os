@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastrar Técnico</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>Gerenciador de Serviços</header>
+
+<div class="menu">
+
+  <a href="criar-servico-admin.html">Novo Serviço</a>
+</div>
+
+
+<div class="top-bar">Cadastrar Técnico</div>
+
+<div class="container">
+  <div class="card">
+    <h3>Novo Técnico</h3>
+
+    <input type="text" id="nome" placeholder="Nome do técnico">
+    <input type="email" id="email" placeholder="Email do técnico">
+    <input type="text" id="telefone" placeholder="Telefone (ex: 5511999999999)">
+    <input type="password" id="senha" placeholder="Senha">
+
+    <button onclick="cadastrarTecnico()">Cadastrar Técnico</button>
+
+    <p id="msg"></p>
+  </div>
+</div>
+
+<button onclick="window.history.back()" class="btn-voltar">⬅ Voltar</button>
+
+
+<script src="js/cadastrar-tecnico.js"></script>
+</body>
+</html>
