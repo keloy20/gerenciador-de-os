@@ -21,17 +21,16 @@ router.post("/start", auth, async (req, res) => {
       return res.status(400).json({ error: "Campos obrigatórios ausentes", body: req.body });
     }
 
-    const project = await Project.create({
-      cliente,
-      unidade,
-      marca,
-      endereco,
-      tipoServico,
-      tecnico: req.userId,
-      status: "em_andamento",
-      antes: { fotos: [], relatorio: "" },
-      depois: { fotos: [], relatorio: "" }
-    });
+ const project = await Project.create({
+  cliente: req.body.cliente,
+  unidade: req.body.unidade,
+  marca: req.body.marca,
+  endereco: req.body.endereco,
+  tipoServico: req.body.tipoServico,
+  tecnico: req.userId,
+  status: "em_andamento",
+  dataServico: new Date() // 🔥 ISSO AQUI É O FIX
+});
 
     console.log("PROJETO CRIADO:", project._id);
 
