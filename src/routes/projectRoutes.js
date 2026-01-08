@@ -12,11 +12,6 @@ const axios = require("axios");
 // ===============================
 router.post("/start", auth, async (req, res) => {
   try {
-    // 🔒 BLOQUEIA ADMIN
-    if (req.userRole !== "tecnico") {
-      return res.status(403).json({ error: "Apenas técnico pode abrir chamado" });
-    }
-
     const { cliente, unidade, marca, endereco, tipoServico } = req.body;
 
     if (!cliente || !endereco || !tipoServico) {
@@ -34,8 +29,7 @@ router.post("/start", auth, async (req, res) => {
       endereco,
       tipoServico,
       tecnico: req.userId,
-      status: "em_andamento",
-      dataServico: new Date()
+      status: "em_andamento"
     });
 
     return res.status(201).json(project);
@@ -47,7 +41,7 @@ router.post("/start", auth, async (req, res) => {
 });
 
 // ===============================
-// TÉCNICO – MEUS SERVIÇOS
+// TÉCNICO – MEUS SERVIÇOS (HISTÓRICO)
 // ===============================
 router.get("/me", auth, async (req, res) => {
   try {
@@ -56,18 +50,11 @@ router.get("/me", auth, async (req, res) => {
       status: "em_andamento"
     });
 
-    const inicioHoje = new Date();
-    inicioHoje.setHours(0, 0, 0, 0);
-
-    const fimHoje = new Date();
-    fimHoje.setHours(23, 59, 59, 999);
-
-    const hoje = await Project.find({
-      tecnico: req.userId,
-      dataServico: { $gte: inicioHoje, $lte: fimHoje }
+    const historico = await Project.find({
+      tecnico: req.userId
     }).sort({ createdAt: -1 });
 
-    return res.json({ atual, hoje });
+    return res.json({ atual, historico });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -75,57 +62,9 @@ router.get("/me", auth, async (req, res) => {
 });
 
 // ===============================
-// ADMIN – TODOS OS SERVIÇOS
-// ===============================
-router.get("/admin/all", auth, async (req, res) => {
-  try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Acesso negado" });
-    }
-
-    const projects = await Project.find()
-      .populate("tecnico", "nome email")
-      .sort({ createdAt: -1 });
-
-    return res.status(200).json(projects);
-
-  } catch (err) {
-    console.error("ERRO ADMIN ALL:", err);
-    return res.status(500).json({ error: "Erro ao buscar serviços" });
-  }
-});
-
-// ===============================
-// ADMIN – CRIAR SERVIÇO
-// ===============================
-router.post("/admin/create", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin pode criar serviço" });
-  }
-
-  const { cliente, endereco, tipoServico, tecnicoId } = req.body;
-
-  try {
-    const project = await Project.create({
-      cliente,
-      endereco,
-      tipoServico,
-      tecnico: tecnicoId,
-      status: "em_andamento",
-      dataServico: new Date()
-    });
-
-    return res.status(201).json(project);
-
-  } catch (err) {
-    return res.status(500).json({ error: "Erro ao criar serviço" });
-  }
-});
-
-// ===============================
 // TÉCNICO – BUSCAR SERVIÇO POR ID
 // ===============================
-router.get("/servico/:id", auth, async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
@@ -144,9 +83,9 @@ router.get("/servico/:id", auth, async (req, res) => {
 });
 
 // ===============================
-// TÉCNICO – ENVIAR ANTES
+// TÉCNICO – ENVIAR / EDITAR ANTES
 // ===============================
-router.post("/servico/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
+router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
@@ -180,9 +119,9 @@ router.post("/servico/:id/antes", auth, upload.array("fotos", 4), async (req, re
 });
 
 // ===============================
-// TÉCNICO – ENVIAR DEPOIS
+// TÉCNICO – ENVIAR / EDITAR DEPOIS
 // ===============================
-router.post("/servico/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
+router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
@@ -210,19 +149,42 @@ router.post("/servico/:id/depois", auth, upload.array("fotos", 4), async (req, r
 
     await project.save();
 
-    return res.status(200).json({ success: true, project });
+    return res.status(200).json(project);
 
   } catch (err) {
-    console.error("ERRO DEPOIS:", err);
     return res.status(500).json({ error: err.message });
   }
 });
 
 // ===============================
-// PDF
+// ADMIN – TODOS OS SERVIÇOS
 // ===============================
-router.get("/servico/:id/pdf", auth, async (req, res) => {
+router.get("/admin/all", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Acesso negado" });
+  }
+
   try {
+    const projects = await Project.find()
+      .populate("tecnico", "nome email")
+      .sort({ createdAt: -1 });
+
+    return res.json(projects);
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ===============================
+// ADMIN – GERAR PDF (SÓ ADMIN)
+// ===============================
+router.get("/:id/pdf", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin pode gerar PDF" });
+    }
+
     const project = await Project.findById(req.params.id).populate("tecnico", "nome");
 
     if (!project) {
