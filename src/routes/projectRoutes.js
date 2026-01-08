@@ -17,20 +17,26 @@ router.post("/start", auth, async (req, res) => {
       return res.status(401).json({ error: "userId não encontrado no token" });
     }
 
-    if (!cliente || !unidade || !marca) {
-      return res.status(400).json({ error: "Campos obrigatórios ausentes", body: req.body });
+    // 🔹 Campos básicos obrigatórios para TODO mundo
+    if (!cliente || !endereco || !tipoServico) {
+      return res.status(400).json({ error: "Cliente, endereço e tipo de serviço são obrigatórios" });
     }
 
- const project = await Project.create({
-  cliente: req.body.cliente,
-  unidade: req.body.unidade,
-  marca: req.body.marca,
-  endereco: req.body.endereco,
-  tipoServico: req.body.tipoServico,
-  tecnico: req.userId,
-  status: "em_andamento",
-  dataServico: new Date() // 🔥 ISSO AQUI É O FIX
-});
+    // 🔴 REGRA DE NEGÓCIO: só exige unidade/marca se for TIMAO
+    if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
+      return res.status(400).json({ error: "Unidade e marca são obrigatórias para o cliente Timão" });
+    }
+
+    const project = await Project.create({
+      cliente,
+      unidade: cliente.toLowerCase() === "timao" ? unidade : "",
+      marca: cliente.toLowerCase() === "timao" ? marca : "",
+      endereco,
+      tipoServico,
+      tecnico: req.userId,
+      status: "em_andamento",
+      dataServico: new Date()
+    });
 
     console.log("PROJETO CRIADO:", project._id);
 
@@ -41,6 +47,7 @@ router.post("/start", auth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // ===============================
