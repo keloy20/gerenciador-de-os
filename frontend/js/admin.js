@@ -1,171 +1,164 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
-const role = localStorage.getItem("role");
 
-let todosServicos = [];
+const inputCliente = document.getElementById("clienteBusca");
+const listaUnidades = document.getElementById("listaUnidades");
 
-if (!token || role !== "admin") {
-  window.location.href = "login.html";
+document.addEventListener("DOMContentLoaded", () => {
+  carregarTecnicos();
+  inputCliente.addEventListener("input", buscarUnidades);
+});
+
+let tecnicosCache = [];
+
+// ===============================
+// CARREGAR TÉCNICOS
+// ===============================
+async function carregarTecnicos() {
+  try {
+    const res = await fetch(`${API}/auth/tecnicos`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const tecnicos = await res.json();
+    tecnicosCache = tecnicos;
+
+    const select = document.getElementById("tecnico");
+    select.innerHTML = `<option value="">Selecione o técnico</option>`;
+
+    tecnicos.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t._id;
+      opt.innerText = t.nome;
+      select.appendChild(opt);
+    });
+
+  } catch (err) {
+    console.error("Erro ao carregar técnicos:", err);
+    alert("Erro ao carregar técnicos");
+  }
 }
 
-document.addEventListener("DOMContentLoaded", carregarAdmin);
+// ===============================
+// AUTOCOMPLETE TIMÃO
+// ===============================
+async function buscarUnidades() {
+  const nome = inputCliente.value.trim();
 
-// ===============================
-// CARREGAR TODOS OS SERVIÇOS (ADMIN)
-// ===============================
-async function carregarAdmin() {
-  const lista = document.getElementById("listaAdmin");
-  lista.innerHTML = "Carregando...";
+  if (nome.length < 2) {
+    listaUnidades.innerHTML = "";
+    return;
+  }
 
   try {
-    const res = await fetch(`${API}/projects/admin/all`, {
+    const res = await fetch(`${API}/clientes/buscar?nome=${encodeURIComponent(nome)}`);
+    const unidades = await res.json();
+
+    listaUnidades.innerHTML = "";
+
+    if (unidades.length === 0) {
+      listaUnidades.innerHTML = `<li>Nenhuma unidade encontrada</li>`;
+      return;
+    }
+
+    unidades.forEach(u => {
+      const li = document.createElement("li");
+      li.innerText = `${u.nome} - ${u.marca}`;
+      li.onclick = () => selecionarUnidade(u);
+      listaUnidades.appendChild(li);
+    });
+
+  } catch (err) {
+    console.error("Erro buscarUnidades:", err);
+  }
+}
+
+function selecionarUnidade(unidade) {
+  document.getElementById("cliente").value = "timao";
+  document.getElementById("unidade").value = unidade.nome;
+  document.getElementById("marca").value = unidade.marca;
+  inputCliente.value = `${unidade.nome} - ${unidade.marca}`;
+  listaUnidades.innerHTML = "";
+}
+
+// ===============================
+// CRIAR SERVIÇO (ADMIN)
+// ===============================
+async function criarServico() {
+  const cliente = document.getElementById("cliente").value || inputCliente.value;
+  const unidade = document.getElementById("unidade").value;
+  const marca = document.getElementById("marca").value;
+  const endereco = document.getElementById("endereco").value;
+  const tipoServico = document.getElementById("tipoServico").value;
+  const tecnicoId = document.getElementById("tecnico").value;
+  const msg = document.getElementById("msg");
+
+  if (!cliente || !endereco || !tipoServico || !tecnicoId) {
+    msg.innerText = "Preencha todos os campos obrigatórios";
+    return;
+  }
+
+  // 🔴 REGRA: só exige unidade/marca se for TIMAO
+  if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
+    msg.innerText = "Selecione a unidade e marca do Timão";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/projects/admin/create`, {
+      method: "POST",
       headers: {
+        "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
-      }
+      },
+      body: JSON.stringify({
+        cliente,
+        unidade: cliente.toLowerCase() === "timao" ? unidade : null,
+        marca: cliente.toLowerCase() === "timao" ? marca : null,
+        endereco,
+        tipoServico,
+        tecnicoId
+      })
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      lista.innerHTML = data.error || "Erro ao carregar dados";
+      msg.innerText = data.error || "Erro ao criar serviço";
       return;
     }
 
-    todosServicos = data;
-    renderLista(data);
+    // WHATSAPP
+    const tecnico = tecnicosCache.find(t => t._id === tecnicoId);
+
+    if (tecnico && tecnico.telefone) {
+      const texto = `
+Novo serviço atribuído:
+
+Cliente: ${cliente}
+Endereço: ${endereco}
+Serviço: ${tipoServico}
+
+Acesse o sistema para iniciar o atendimento.
+`;
+      const link = `https://wa.me/${tecnico.telefone}?text=${encodeURIComponent(texto)}`;
+      window.open(link, "_blank");
+    }
+
+    msg.innerText = "Serviço criado e enviado ao técnico com sucesso!";
+
+    // limpar
+    inputCliente.value = "";
+    document.getElementById("cliente").value = "";
+    document.getElementById("unidade").value = "";
+    document.getElementById("marca").value = "";
+    document.getElementById("endereco").value = "";
+    document.getElementById("tipoServico").value = "";
+    document.getElementById("tecnico").value = "";
+    listaUnidades.innerHTML = "";
 
   } catch (err) {
-    console.error(err);
-    lista.innerHTML = "Erro de conexão com o servidor";
+    console.error("Erro ao criar serviço:", err);
+    msg.innerText = "Erro de conexão com o servidor";
   }
-}
-
-// ===============================
-// RENDERIZAR LISTA
-// ===============================
-function renderLista(listaDados) {
-  const lista = document.getElementById("listaAdmin");
-  lista.innerHTML = "";
-
-  if (listaDados.length === 0) {
-    lista.innerHTML = "Nenhum serviço encontrado.";
-    return;
-  }
-
-  listaDados.forEach(servico => {
-    const div = document.createElement("div");
-    div.className = "card";
-
-    const dataFormatada = formatarData(servico.createdAt || servico.dataServico);
-
-    div.innerHTML = `
-      <strong>Cliente:</strong> ${servico.cliente}<br>
-      <strong>Unidade:</strong> ${servico.unidade || "-"}<br>
-      <strong>Marca:</strong> ${servico.marca || "-"}<br>
-      <strong>Técnico:</strong> ${servico.tecnico?.nome || "N/A"}<br>
-      <strong>Data:</strong> ${dataFormatada}<br>
-      <span class="status ${servico.status}">${servico.status}</span><br><br>
-
-      <button onclick="toggleDetalhes('${servico._id}')">Ver Detalhes</button>
-      <button onclick="gerarPDF('${servico._id}')">📄 Gerar PDF</button>
-
-      <div id="detalhes-${servico._id}" style="display:none; margin-top:10px;">
-        ${renderBloco("Antes", servico.antes)}
-        ${renderBloco("Depois", servico.depois)}
-      </div>
-    `;
-
-    lista.appendChild(div);
-  });
-}
-
-// ===============================
-// FILTRAR POR CLIENTE OU TÉCNICO
-// ===============================
-function filtrarServicos() {
-  const termo = document.getElementById("busca").value.toLowerCase();
-
-  const filtrados = todosServicos.filter(servico => {
-    const cliente = servico.cliente?.toLowerCase() || "";
-    const unidade = servico.unidade?.toLowerCase() || "";
-    const marca = servico.marca?.toLowerCase() || "";
-    const tecnico = servico.tecnico?.nome?.toLowerCase() || "";
-
-    return (
-      cliente.includes(termo) ||
-      unidade.includes(termo) ||
-      marca.includes(termo) ||
-      tecnico.includes(termo)
-    );
-  });
-
-  renderLista(filtrados);
-}
-
-// ===============================
-// MOSTRAR / ESCONDER DETALHES
-// ===============================
-function toggleDetalhes(id) {
-  const div = document.getElementById(`detalhes-${id}`);
-  div.style.display = div.style.display === "none" ? "block" : "none";
-}
-
-// ===============================
-// BLOCO ANTES / DEPOIS
-// ===============================
-function renderBloco(titulo, bloco) {
-  if (!bloco || !bloco.fotos || bloco.fotos.length === 0) {
-    return `<p><strong>${titulo}:</strong> sem dados</p>`;
-  }
-
-  let html = `
-    <p><strong>${titulo}</strong></p>
-    <div class="fotos-grid">
-  `;
-
-  bloco.fotos.forEach(url => {
-    html += `<img src="${url}">`;
-  });
-
-  html += `
-    </div>
-    <p><em>${bloco.relatorio || ""}</em></p>
-    <hr>
-  `;
-
-  return html;
-}
-
-// ===============================
-// FORMATAR DATA
-// ===============================
-function formatarData(data) {
-  if (!data) return "—";
-
-  const d = new Date(data);
-  return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-}
-
-// ===============================
-// GERAR PDF
-// ===============================
-function gerarPDF(id) {
-  const url = `${API}/projects/${id}/pdf`;
-
-  fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-    .then(res => res.blob())
-    .then(blob => {
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `servico-${id}.pdf`;
-      link.click();
-    })
-    .catch(err => {
-      alert("Erro ao gerar PDF");
-      console.error(err);
-    });
 }

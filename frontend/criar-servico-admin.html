@@ -1,31 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Novo Serviço</title>
+  <meta charset="UTF-8">
+  <title>Novo Serviço - Admin</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <header>Gerenciador de Serviços</header>
+<header>Novo Serviço (Admin)</header>
 
 <div class="menu">
-  <a href="dashboard.html">Dashboard</a>
+  <a href="admin.html">Voltar</a>
 </div>
 
+<div class="container">
+  <div class="card">
+    <h3>Criar Serviço</h3>
 
-<div class="top-bar">Novo Serviço</div>
+    <!-- CLIENTE / UNIDADE -->
+    <label>Cliente / Unidade</label>
+    <input 
+      type="text" 
+      id="clienteBusca" 
+      placeholder="Digite (ex: timao)"
+      autocomplete="off"
+    >
 
-<div class="card">
-  <input id="cliente" placeholder="Cliente">
-  <input id="endereco" placeholder="Endereço">
-  <input id="tipoServico" placeholder="Tipo de serviço">
-  <select id="tecnico"></select>
-  <button onclick="criarServico()">Enviar para Técnico</button>
-  <p id="msg"></p>
+    <ul id="listaUnidades" class="autocomplete-list"></ul>
+
+    <!-- CAMPOS OCULTOS -->
+    <input type="hidden" id="cliente">
+    <input type="hidden" id="unidade">
+    <input type="hidden" id="marca">
+
+    <!-- ENDEREÇO -->
+    <label>Endereço</label>
+    <input type="text" id="endereco" placeholder="Endereço do local">
+
+    <!-- TIPO DE SERVIÇO -->
+    <label>Tipo de Serviço</label>
+    <input type="text" id="tipoServico" placeholder="Ex: Manutenção, Instalação">
+
+    <!-- TÉCNICO -->
+    <label>Técnico</label>
+    <select id="tecnico"></select>
+
+    <button onclick="criarServico()">Criar Serviço</button>
+
+    <p id="msg"></p>
+  </div>
 </div>
-
-<button onclick="window.history.back()" class="btn-voltar">⬅ Voltar</button>
-
 
 <script src="js/criar-servico-admin.js"></script>
 </body>
