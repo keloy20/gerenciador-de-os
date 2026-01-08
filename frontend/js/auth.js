@@ -1,5 +1,4 @@
 const API = "https://gerenciador-de-os.onrender.com";
-
 async function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;

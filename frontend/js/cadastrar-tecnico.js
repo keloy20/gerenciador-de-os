@@ -1,5 +1,6 @@
 const API = "https://gerenciador-de-os.onrender.com";
 
+
 function cadastrarTecnico() {
   const token = localStorage.getItem("token");
 

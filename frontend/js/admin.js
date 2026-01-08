@@ -1,4 +1,4 @@
-const API = "https://gerenciador-de-os.onrender.com/";
+const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 const role = localStorage.getItem("role");
 
