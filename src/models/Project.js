@@ -1,33 +1,29 @@
 const mongoose = require("mongoose");
 
 const ProjectSchema = new mongoose.Schema({
-  cliente: {
-    type: String,
-    required: true
-  },
+  cliente: { type: String, required: true },
 
-  unidade: {
-    type: String,
-    default: ""
-  },
-
-  marca: {
-    type: String,
-    default: ""
-  },
+  unidade: { type: String, default: null },
+  marca: { type: String, default: null },
 
   endereco: String,
   tipoServico: String,
 
   tecnico: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
+    required: true
   },
 
   status: {
     type: String,
     enum: ["em_andamento", "concluido"],
     default: "em_andamento"
+  },
+
+  dataServico: {
+    type: Date,
+    default: Date.now
   },
 
   antes: {

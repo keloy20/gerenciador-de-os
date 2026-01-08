@@ -71,19 +71,20 @@ router.get("/me", auth, async (req, res) => {
 // ADMIN – TODOS OS SERVIÇOS
 // ===============================
 router.get("/admin/all", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Acesso negado" });
-  }
-
   try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
     const projects = await Project.find()
       .populate("tecnico", "nome email")
       .sort({ createdAt: -1 });
 
-    return res.json(projects);
+    return res.status(200).json(projects);
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("ERRO ADMIN ALL:", err);
+    return res.status(500).json({ error: "Erro ao buscar serviços" });
   }
 });
 
