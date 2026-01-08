@@ -10,27 +10,16 @@ if (!token || role !== "admin") {
 
 document.addEventListener("DOMContentLoaded", carregarAdmin);
 
-// ===============================
-// CARREGAR SERVIÇOS (ADMIN)
-// ===============================
 async function carregarAdmin() {
   const lista = document.getElementById("listaAdmin");
   lista.innerHTML = "Carregando...";
 
   try {
     const res = await fetch(`${API}/projects/admin/all`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     const data = await res.json();
-
-    if (!res.ok) {
-      lista.innerHTML = data.error || "Erro ao carregar serviços";
-      return;
-    }
-
     todosServicos = data;
     renderLista(todosServicos);
 
@@ -40,22 +29,11 @@ async function carregarAdmin() {
   }
 }
 
-// ===============================
-// RENDERIZAR LISTA
-// ===============================
 function renderLista(servicos) {
   const lista = document.getElementById("listaAdmin");
   lista.innerHTML = "";
 
-  if (servicos.length === 0) {
-    lista.innerHTML = "Nenhum serviço encontrado.";
-    return;
-  }
-
   servicos.forEach(servico => {
-    const div = document.createElement("div");
-    div.classList.add("card");
-
     let statusLabel = "";
     let statusClass = "";
 
@@ -68,22 +46,18 @@ function renderLista(servicos) {
     } else if (servico.status === "concluido") {
       statusLabel = "Concluído";
       statusClass = "status-concluido";
-    } else {
-      statusLabel = servico.status;
-      statusClass = "";
     }
 
     const tecnicoNome = servico.tecnico?.nome || "—";
-    const osNumero = servico.osNumero || "—";
+
+    const div = document.createElement("div");
+    div.classList.add("card");
 
     div.innerHTML = `
-      <strong>OS:</strong> ${osNumero}<br>
+      <strong>OS:</strong> ${servico.osNumero}<br>
       <strong>Cliente:</strong> ${servico.cliente}<br>
       <strong>Técnico:</strong> ${tecnicoNome}<br>
-      <strong>Status:</strong>
-      <span class="status ${statusClass}">● ${statusLabel}</span>
-      <br><br>
-
+      <span class="status ${statusClass}">● ${statusLabel}</span><br><br>
       <button onclick="abrirPDF('${servico._id}')">📄 PDF</button>
       <hr>
     `;
@@ -92,26 +66,20 @@ function renderLista(servicos) {
   });
 }
 
-// ===============================
-// FILTRO
-// ===============================
 function filtrarServicos() {
   const termo = document.getElementById("busca").value.toLowerCase();
 
   const filtrados = todosServicos.filter(s => {
-    const cliente = s.cliente?.toLowerCase() || "";
-    const tecnico = s.tecnico?.nome?.toLowerCase() || "";
-    const os = s.osNumero?.toLowerCase() || "";
-
-    return cliente.includes(termo) || tecnico.includes(termo) || os.includes(termo);
+    return (
+      s.cliente?.toLowerCase().includes(termo) ||
+      s.osNumero?.toLowerCase().includes(termo) ||
+      s.tecnico?.nome?.toLowerCase().includes(termo)
+    );
   });
 
   renderLista(filtrados);
 }
 
-// ===============================
-// PDF
-// ===============================
 function abrirPDF(id) {
   window.open(`${API}/projects/${id}/pdf`, "_blank");
 }
