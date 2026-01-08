@@ -1,37 +1,27 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
-let tecnicosCache = []; 
+let tecnicosCache = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-  const inputCliente = document.getElementById("cliente");
-
-  if (!inputCliente) {
-    console.error("❌ input #cliente não encontrado no HTML");
-    return;
-  }
-
-  inputCliente.addEventListener("input", buscarUnidades);
-
   carregarTecnicos();
 });
 
-// ===============================
-// CARREGAR TÉCNICOS
-// ===============================
 async function carregarTecnicos() {
   try {
     const res = await fetch(`${API}/auth/tecnicos`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     });
 
-    const tecnicos = await res.json();
-    tecnicosCache = tecnicos;
+    const data = await res.json();
+    tecnicosCache = data;
 
     const select = document.getElementById("tecnico");
     select.innerHTML = `<option value="">Selecione o técnico</option>`;
 
-    tecnicos.forEach(t => {
+    data.forEach(t => {
       const opt = document.createElement("option");
       opt.value = t._id;
       opt.innerText = t.nome;
@@ -39,70 +29,13 @@ async function carregarTecnicos() {
     });
 
   } catch (err) {
-    console.error("Erro ao carregar técnicos:", err);
+    console.error("Erro ao carregar técnicos", err);
     alert("Erro ao carregar técnicos");
   }
 }
 
-// ===============================
-// BUSCAR UNIDADES (SÓ TIMÃO)
-// ===============================
-async function buscarUnidades() {
-  const nome = document.getElementById("cliente").value.trim().toLowerCase();
-  const listaUnidades = document.getElementById("listaUnidades");
-  const boxTimao = document.getElementById("boxTimao");
-
-  if (!listaUnidades || !boxTimao) {
-    console.error("❌ listaUnidades ou boxTimao não encontrados no HTML");
-    return;
-  }
-
-  if (nome !== "timao") {
-    listaUnidades.innerHTML = "";
-    boxTimao.style.display = "none";
-    document.getElementById("unidade").value = "";
-    document.getElementById("marca").value = "";
-    return;
-  }
-
-  boxTimao.style.display = "block";
-
-  try {
-    const res = await fetch(`${API}/clientes/buscar?nome=${encodeURIComponent(nome)}`);
-    const unidades = await res.json();
-
-    listaUnidades.innerHTML = "";
-
-    if (unidades.length === 0) {
-      listaUnidades.innerHTML = "<li>Nenhuma unidade encontrada</li>";
-      return;
-    }
-
-    unidades.forEach(u => {
-      const li = document.createElement("li");
-      li.innerText = `${u.nome} - ${u.marca}`;
-      li.onclick = () => selecionarUnidade(u);
-      listaUnidades.appendChild(li);
-    });
-
-  } catch (err) {
-    console.error("Erro ao buscar unidades:", err);
-  }
-}
-
-function selecionarUnidade(unidade) {
-  document.getElementById("unidade").value = unidade.nome;
-  document.getElementById("marca").value = unidade.marca;
-  document.getElementById("listaUnidades").innerHTML = "";
-}
-
-// ===============================
-// CRIAR SERVIÇO (ADMIN)
-// ===============================
 async function criarServicoAdmin() {
   const cliente = document.getElementById("cliente").value;
-  const unidade = document.getElementById("unidade").value;
-  const marca = document.getElementById("marca").value;
   const endereco = document.getElementById("endereco").value;
   const tipoServico = document.getElementById("tipoServico").value;
   const tecnicoId = document.getElementById("tecnico").value;
@@ -113,22 +46,15 @@ async function criarServicoAdmin() {
     return;
   }
 
-  if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
-    msg.innerText = "Selecione a unidade e marca do Timão";
-    return;
-  }
-
   try {
     const res = await fetch(`${API}/projects/admin/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({
         cliente,
-        unidade,
-        marca,
         endereco,
         tipoServico,
         tecnicoId
@@ -138,23 +64,15 @@ async function criarServicoAdmin() {
     const data = await res.json();
 
     if (!res.ok) {
+      console.error("ERRO API:", data);
       msg.innerText = data.error || "Erro ao criar serviço";
       return;
     }
 
-    // 🔥 WHATSAPP
+    // WhatsApp
     const tecnico = tecnicosCache.find(t => t._id === tecnicoId);
-
     if (tecnico && tecnico.telefone) {
-      const texto = `Novo serviço atribuído:
-
-Cliente: ${cliente}
-${cliente.toLowerCase() === "timao" ? `Unidade: ${unidade}\nMarca: ${marca}\n` : ""}
-Endereço: ${endereco}
-Serviço: ${tipoServico}
-
-Acesse o sistema para iniciar o atendimento.`;
-
+      const texto = `Novo serviço atribuído:\n\nCliente: ${cliente}\nEndereço: ${endereco}\nServiço: ${tipoServico}`;
       const link = `https://wa.me/${tecnico.telefone}?text=${encodeURIComponent(texto)}`;
       window.open(link, "_blank");
     }
@@ -165,7 +83,7 @@ Acesse o sistema para iniciar o atendimento.`;
     }, 800);
 
   } catch (err) {
-    console.error("Erro ao criar serviço:", err);
+    console.error("ERRO FETCH:", err);
     msg.innerText = "Erro de conexão com o servidor";
   }
 }

@@ -192,39 +192,34 @@ router.get("/admin/all", auth, async (req, res) => {
 // ADMIN – CRIAR SERVIÇO PARA TÉCNICO
 // ==========================================
 router.post("/admin/create", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin pode criar serviço" });
-  }
-
-  const { cliente, unidade, marca, endereco, tipoServico, tecnicoId } = req.body;
-
-  if (!cliente || !endereco || !tipoServico || !tecnicoId) {
-    return res.status(400).json({ error: "Preencha todos os campos" });
-  }
-
-  if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
-    return res.status(400).json({ error: "Unidade e marca são obrigatórias para o cliente Timão" });
-  }
-
   try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin pode criar serviço" });
+    }
+
+    const { cliente, endereco, tipoServico, tecnicoId } = req.body;
+
+    if (!cliente || !endereco || !tipoServico || !tecnicoId) {
+      return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+    }
+
     const project = await Project.create({
       cliente,
-      unidade: cliente.toLowerCase() === "timao" ? unidade : null,
-      marca: cliente.toLowerCase() === "timao" ? marca : null,
       endereco,
       tipoServico,
       tecnico: tecnicoId,
-      status:"aguardando tecnico",
+      status: "aguardando_tecnico",
       dataServico: new Date()
     });
 
-    res.status(201).json(project);
+    return res.status(201).json(project);
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao criar serviço" });
+    console.error("🔥 ERRO ADMIN CREATE:", err);
+    return res.status(500).json({ error: "Erro ao criar serviço" });
   }
 });
+
 
 
 
