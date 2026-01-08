@@ -145,3 +145,35 @@ button:hover {
   font-size: 14px;
   color: #d97706;
 }
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.status::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status.em_andamento {
+  color: #f59e0b;
+}
+
+.status.em_andamento::before {
+  background: #f59e0b;
+}
+
+.status.concluido {
+  color: #22c55e;
+}
+
+.status.concluido::before {
+  background: #22c55e;
+}

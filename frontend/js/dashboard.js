@@ -31,6 +31,8 @@ async function carregarDashboard() {
 
       div.innerHTML = `
         <strong>${servico.cliente}</strong><br>
+<span class="status ${servico.status}">${servico.status}</span><br>
+
         <small>${servico.tipoServico}</small><br>
         <button onclick="abrirServico('${servico._id}')">Abrir</button>
       `;
@@ -48,5 +50,10 @@ function abrirServico(id) {
   localStorage.setItem("servicoId", id);
   window.location.href = "servico.html";
 }
+
+function novoServico() {
+  window.location.href = "novo-servico.html";
+}
+
 
 carregarDashboard();
