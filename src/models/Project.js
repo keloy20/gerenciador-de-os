@@ -8,12 +8,12 @@ const ProjectSchema = new mongoose.Schema({
 
   unidade: {
     type: String,
-    required: ""
+    default: ""
   },
 
   marca: {
     type: String,
-    required: ""
+    default: ""
   },
 
   endereco: String,
