@@ -24,10 +24,20 @@ async function carregarServico() {
 
     const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.error || "Erro ao carregar serviço");
-      return;
-    }
+  if (!res.ok) {
+
+  // 🔥 SE JÁ EXISTE SERVIÇO EM ANDAMENTO
+  if (data.error && data.error.includes("serviço em andamento")) {
+    alert("Você já tem um serviço em andamento. Abrindo o serviço atual.");
+
+    // força voltar pro dashboard
+    window.location.href = "dashboard.html";
+    return;
+  }
+
+  msg.innerText = data.error || "Erro ao criar serviço";
+  return;
+}
 
     document.getElementById("clienteNome").innerText = data.cliente || "Cliente";
 
