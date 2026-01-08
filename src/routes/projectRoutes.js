@@ -7,9 +7,7 @@ const cloudinary = require("../config/cloudinary");
 const PDFDocument = require("pdfkit");
 const axios = require("axios");
 
-// ===============================
 // TÉCNICO – INICIAR SERVIÇO
-// ===============================
 router.post("/start", auth, async (req, res) => {
   try {
     const { cliente, unidade, marca, endereco, tipoServico } = req.body;
@@ -40,9 +38,8 @@ router.post("/start", auth, async (req, res) => {
   }
 });
 
-// ===============================
 // TÉCNICO – MEUS SERVIÇOS (HISTÓRICO)
-// ===============================
+
 router.get("/me", auth, async (req, res) => {
   try {
     const atual = await Project.findOne({
@@ -62,9 +59,8 @@ router.get("/me", auth, async (req, res) => {
   }
 });
 
-// ===============================
 // BUSCAR SERVIÇO POR ID (ADMIN OU TÉCNICO DONO)
-// ===============================
+
 router.get("/:id", auth, async (req, res) => {
   try {
     let project;
@@ -90,9 +86,8 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
-// ===============================
 // ENVIAR / EDITAR ANTES (ADMIN OU TÉCNICO DONO)
-// ===============================
+
 router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     let project;
@@ -133,9 +128,8 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   }
 });
 
-// ===============================
 // ENVIAR / EDITAR DEPOIS (ADMIN OU TÉCNICO DONO)
-// ===============================
+
 router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     let project;
@@ -178,9 +172,8 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   }
 });
 
-// ===============================
 // ADMIN – TODOS OS SERVIÇOS
-// ===============================
+
 router.get("/admin/all", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -199,9 +192,8 @@ router.get("/admin/all", auth, async (req, res) => {
   }
 });
 
-// ===============================
 // ADMIN – GERAR PDF
-// ===============================
+
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
