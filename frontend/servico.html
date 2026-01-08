@@ -2,37 +2,56 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Novo Serviço</title>
+  <title>Atendimento do Serviço</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .fotos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .fotos-grid img {
+      width: 100%;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
 
-<header>Novo Serviço</header>
+<header>Atendimento do Serviço</header>
 
 <div class="container">
-
   <div class="card">
-    <h3>Dados do Cliente</h3>
 
-    <input type="text" id="cliente" placeholder="Cliente">
+    <h3 id="clienteNome">Cliente</h3>
 
-    <ul id="listaUnidades" class="autocomplete-list"></ul>
+    <!-- ===== ANTES ===== -->
+    <h4>📷 Antes</h4>
+    <input type="file" id="fotosAntes" multiple>
+    <textarea id="relatorioAntes" placeholder="Relatório ANTES"></textarea>
+    <button onclick="salvarAntes()">Salvar ANTES</button>
 
-    <input type="text" id="unidade" placeholder="Unidade" readonly>
-    <input type="text" id="marca" placeholder="Marca" readonly>
+    <div id="fotosAntesPreview" class="fotos-grid"></div>
 
-    <input type="text" id="endereco" placeholder="Endereço">
-    <input type="text" id="tipoServico" placeholder="Tipo de serviço">
+    <hr>
 
-    <button onclick="criarServico()">Criar Serviço</button>
+    <!-- ===== DEPOIS ===== -->
+    <h4>📷 Depois</h4>
+    <input type="file" id="fotosDepois" multiple>
+    <textarea id="relatorioDepois" placeholder="Relatório DEPOIS"></textarea>
+    <button onclick="salvarDepois()">Salvar DEPOIS</button>
 
-    <p id="msg"></p>
+    <div id="fotosDepoisPreview" class="fotos-grid"></div>
+
   </div>
-
 </div>
 
 <button onclick="window.history.back()" class="btn-voltar">⬅ Voltar</button>
 
-<script src="js/novo-servico.js"></script>
+<script src="js/servico.js"></script>
 </body>
 </html>
