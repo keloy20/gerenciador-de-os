@@ -1,15 +1,32 @@
 const express = require("express");
 const router = express.Router();
 const Project = require("../models/Project");
+const Counter = require("../models/Counter");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
 const cloudinary = require("../config/cloudinary");
 const PDFDocument = require("pdfkit");
 const axios = require("axios");
 
-// ===============================
-// TÉCNICO – INICIAR SERVIÇO
-// ===============================
+/* ===============================
+   GERAR NÚMERO DA OS
+================================ */
+async function gerarNumeroOS() {
+  const ano = new Date().getFullYear();
+
+  const counter = await Counter.findOneAndUpdate(
+    { name: `os-${ano}` },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+
+  const numeroFormatado = String(counter.seq).padStart(4, "0");
+  return `${numeroFormatado}-${ano}`;
+}
+
+/* ===============================
+   TÉCNICO – CRIAR CHAMADO (EM ANDAMENTO)
+================================ */
 router.post("/start", auth, async (req, res) => {
   try {
     const { cliente, unidade, marca, endereco, tipoServico } = req.body;
@@ -22,7 +39,10 @@ router.post("/start", auth, async (req, res) => {
       return res.status(400).json({ error: "Unidade e marca são obrigatórias para o cliente Timão" });
     }
 
+    const osNumero = await gerarNumeroOS();
+
     const project = await Project.create({
+      osNumero,
       cliente,
       unidade: cliente.toLowerCase() === "timao" ? unidade : null,
       marca: cliente.toLowerCase() === "timao" ? marca : null,
@@ -41,87 +61,32 @@ router.post("/start", auth, async (req, res) => {
   }
 });
 
-// ===============================
-// TÉCNICO – MEUS SERVIÇOS
-// (AGUARDANDO + EM ANDAMENTO)
-// ===============================
-router.get("/me", auth, async (req, res) => {
-  try {
-    const servicos = await Project.find({
-      tecnico: req.userId,
-      status: { $in: ["aguardando_tecnico", "em_andamento"] }
-    }).sort({ createdAt: -1 });
-
-    return res.json(servicos);
-
-  } catch (err) {
-    console.error("ERRO ME:", err);
-    return res.status(500).json({ error: "Erro ao buscar serviços do técnico" });
-  }
-});
-
-// ===============================
-// TÉCNICO – ABRIR SERVIÇO (MUDA STATUS)
-// ===============================
-router.get("/:id", auth, async (req, res) => {
-  try {
-    const project = await Project.findOne({
-      _id: req.params.id,
-      tecnico: req.userId
-    });
-
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
-
-    // 🔥 AQUI ESTÁ A MÁGICA
-    if (project.status === "aguardando_tecnico") {
-      project.status = "em_andamento";
-      await project.save();
-    }
-
-    return res.json(project);
-
-  } catch (err) {
-    console.error("ERRO GET ID:", err);
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// ===============================
-// ADMIN – TODOS OS SERVIÇOS
-// ===============================
-router.get("/admin/all", auth, async (req, res) => {
+/* ===============================
+   ADMIN – CRIAR CHAMADO (AGUARDANDO TÉCNICO)
+================================ */
+router.post("/admin/create", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Acesso negado" });
+      return res.status(403).json({ error: "Apenas admin pode criar serviço" });
     }
 
-    const projects = await Project.find()
-      .populate("tecnico", "nome email")
-      .sort({ createdAt: -1 });
+    const { cliente, unidade, marca, endereco, tipoServico, tecnicoId } = req.body;
 
-    return res.status(200).json(projects);
+    if (!cliente || !endereco || !tipoServico || !tecnicoId) {
+      return res.status(400).json({ error: "Preencha todos os campos" });
+    }
 
-  } catch (err) {
-    console.error("ERRO ADMIN ALL:", err);
-    return res.status(500).json({ error: "Erro ao buscar serviços" });
-  }
-});
+    if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
+      return res.status(400).json({ error: "Unidade e marca são obrigatórias para o cliente Timão" });
+    }
 
-// ===============================
-// ADMIN – CRIAR SERVIÇO (AGUARDANDO TÉCNICO)
-// ===============================
-router.post("/admin/create", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin pode criar serviço" });
-  }
+    const osNumero = await gerarNumeroOS();
 
-  const { cliente, endereco, tipoServico, tecnicoId } = req.body;
-
-  try {
     const project = await Project.create({
+      osNumero,
       cliente,
+      unidade: cliente.toLowerCase() === "timao" ? unidade : null,
+      marca: cliente.toLowerCase() === "timao" ? marca : null,
       endereco,
       tipoServico,
       tecnico: tecnicoId,
@@ -133,13 +98,79 @@ router.post("/admin/create", auth, async (req, res) => {
 
   } catch (err) {
     console.error("ERRO ADMIN CREATE:", err);
-    return res.status(500).json({ error: "Erro ao criar serviço" });
+    return res.status(500).json({ error: err.message });
   }
 });
 
-// ===============================
-// TÉCNICO – ENVIAR ANTES
-// ===============================
+/* ===============================
+   TÉCNICO – MEUS SERVIÇOS
+================================ */
+router.get("/me", auth, async (req, res) => {
+  try {
+    const projetos = await Project.find({
+      tecnico: req.userId
+    }).sort({ createdAt: -1 });
+
+    return res.json(projetos);
+
+  } catch (err) {
+    console.error("ERRO ME:", err);
+    return res.status(500).json({ error: "Erro ao buscar serviços" });
+  }
+});
+
+/* ===============================
+   TÉCNICO – ABRIR SERVIÇO (MUDA STATUS)
+================================ */
+router.post("/:id/abrir", auth, async (req, res) => {
+  try {
+    const project = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: "Serviço não encontrado" });
+    }
+
+    if (project.status === "aguardando_tecnico") {
+      project.status = "em_andamento";
+      await project.save();
+    }
+
+    return res.json(project);
+
+  } catch (err) {
+    console.error("ERRO ABRIR:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/* ===============================
+   TÉCNICO – BUSCAR SERVIÇO POR ID
+================================ */
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const project = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: "Serviço não encontrado" });
+    }
+
+    return res.json(project);
+
+  } catch (err) {
+    console.error("ERRO GET ID:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/* ===============================
+   TÉCNICO – ENVIAR ANTES
+================================ */
 router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -148,7 +179,7 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
     });
 
     if (!project) {
-      return res.status(404).json({ error: "Projeto não encontrado" });
+      return res.status(404).json({ error: "Serviço não encontrado" });
     }
 
     const urls = [];
@@ -161,12 +192,12 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
     project.antes = {
       fotos: urls,
       relatorio: req.body.relatorio || "",
+      observacao: req.body.observacao || "",
       data: new Date()
     };
 
     await project.save();
-
-    return res.status(200).json(project);
+    return res.json(project);
 
   } catch (err) {
     console.error("ERRO ANTES:", err);
@@ -174,9 +205,9 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   }
 });
 
-// ===============================
-// TÉCNICO – ENVIAR DEPOIS (CONCLUI)
-// ===============================
+/* ===============================
+   TÉCNICO – ENVIAR DEPOIS (FINALIZA)
+================================ */
 router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -185,7 +216,7 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
     });
 
     if (!project) {
-      return res.status(404).json({ error: "Projeto não encontrado" });
+      return res.status(404).json({ error: "Serviço não encontrado" });
     }
 
     const urls = [];
@@ -198,14 +229,14 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
     project.depois = {
       fotos: urls,
       relatorio: req.body.relatorio || "",
+      observacao: req.body.observacao || "",
       data: new Date()
     };
 
     project.status = "concluido";
 
     await project.save();
-
-    return res.status(200).json(project);
+    return res.json(project);
 
   } catch (err) {
     console.error("ERRO DEPOIS:", err);
@@ -213,9 +244,30 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   }
 });
 
-// ===============================
-// ADMIN – PDF
-// ===============================
+/* ===============================
+   ADMIN – TODOS OS SERVIÇOS
+================================ */
+router.get("/admin/all", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
+    const projetos = await Project.find()
+      .populate("tecnico", "nome email")
+      .sort({ createdAt: -1 });
+
+    return res.json(projetos);
+
+  } catch (err) {
+    console.error("ERRO ADMIN ALL:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/* ===============================
+   ADMIN – PDF
+================================ */
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -231,23 +283,24 @@ router.get("/:id/pdf", auth, async (req, res) => {
     const doc = new PDFDocument({ margin: 40 });
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="servico-${project._id}.pdf"`);
+    res.setHeader("Content-Disposition", `inline; filename="OS-${project.osNumero}.pdf"`);
 
     doc.pipe(res);
 
-    doc.fontSize(20).text("RELATÓRIO DE SERVIÇO", { align: "center" });
+    doc.fontSize(20).text(`ORDEM DE SERVIÇO ${project.osNumero}`, { align: "center" });
     doc.moveDown();
 
     doc.fontSize(12).text(`Cliente: ${project.cliente}`);
     doc.text(`Unidade: ${project.unidade || "-"}`);
     doc.text(`Marca: ${project.marca || "-"}`);
-    doc.text(`Técnico: ${project.tecnico?.nome || "N/A"}`);
+    doc.text(`Endereço: ${project.endereco}`);
+    doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
     doc.text(`Status: ${project.status}`);
     doc.moveDown();
 
     doc.fontSize(14).text("ANTES", { underline: true });
-    doc.moveDown(0.5);
-    doc.fontSize(11).text(project.antes?.relatorio || "Sem relatório");
+    doc.text(project.antes?.relatorio || "Sem relatório");
+    doc.text(`Obs: ${project.antes?.observacao || "-"}`);
     doc.moveDown();
 
     if (project.antes?.fotos?.length) {
@@ -259,9 +312,10 @@ router.get("/:id/pdf", auth, async (req, res) => {
     }
 
     doc.addPage();
+
     doc.fontSize(14).text("DEPOIS", { underline: true });
-    doc.moveDown(0.5);
-    doc.fontSize(11).text(project.depois?.relatorio || "Sem relatório");
+    doc.text(project.depois?.relatorio || "Sem relatório");
+    doc.text(`Obs: ${project.depois?.observacao || "-"}`);
     doc.moveDown();
 
     if (project.depois?.fotos?.length) {
