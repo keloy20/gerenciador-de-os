@@ -19,7 +19,7 @@ async function carregarDashboard() {
     const servicos = await res.json();
     lista.innerHTML = "";
 
-    if (servicos.length === 0) {
+    if (!Array.isArray(servicos) || servicos.length === 0) {
       lista.innerHTML = "Nenhum serviço encontrado.";
       return;
     }
@@ -43,7 +43,7 @@ async function carregarDashboard() {
       div.classList.add("card");
 
       div.innerHTML = `
-        <strong>OS:</strong> ${servico.osNumero}<br>
+        <strong>OS:</strong> ${servico.osNumero || "-"}<br>
         <strong>Cliente:</strong> ${servico.cliente}<br>
         <span class="status ${statusClass}">● ${statusLabel}</span><br><br>
         <button onclick="abrirServico('${servico._id}')">Abrir Serviço</button>

@@ -13,6 +13,15 @@ if (!token) {
 // ===============================
 async function carregarServico() {
   try {
+    // 🔥 1. Avisa o backend que o técnico abriu o serviço (muda para em_andamento)
+    await fetch(`${API}/projects/${servicoId}/abrir`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    // 🔥 2. Busca os dados do serviço
     const res = await fetch(`${API}/projects/${servicoId}`, {
       headers: {
         Authorization: `Bearer ${token}`
@@ -26,13 +35,40 @@ async function carregarServico() {
       return;
     }
 
+    // 🔥 3. Preenche os dados na tela
     document.getElementById("clienteNome").innerText = data.cliente;
+    document.getElementById("osNumero").innerText = data.osNumero || "-";
+
+    // ANTES
+    const antesDiv = document.getElementById("fotosAntesPreview");
+    antesDiv.innerHTML = "";
+
+    if (data.antes?.fotos?.length) {
+      data.antes.fotos.forEach(url => {
+        antesDiv.innerHTML += `<img src="${url}">`;
+      });
+      document.getElementById("relatorioAntes").value = data.antes.relatorio || "";
+      document.getElementById("observacaoAntes").value = data.antes.observacao || "";
+    }
+
+    // DEPOIS
+    const depoisDiv = document.getElementById("fotosDepoisPreview");
+    depoisDiv.innerHTML = "";
+
+    if (data.depois?.fotos?.length) {
+      data.depois.fotos.forEach(url => {
+        depoisDiv.innerHTML += `<img src="${url}">`;
+      });
+      document.getElementById("relatorioDepois").value = data.depois.relatorio || "";
+      document.getElementById("observacaoDepois").value = data.depois.observacao || "";
+    }
 
   } catch (err) {
     console.error(err);
     alert("Erro de conexão com servidor");
   }
 }
+
 
 carregarServico();
 

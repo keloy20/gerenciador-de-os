@@ -82,10 +82,22 @@ router.post("/:id/abrir", auth, async (req, res) => {
 // ===============================
 // TÉCNICO – MEUS SERVIÇOS (TODOS)
 // ===============================
+// ===============================
+// TÉCNICO – MEUS SERVIÇOS (TODOS)
+// ===============================
 router.get("/me", auth, async (req, res) => {
-  const projetos = await Project.find({ tecnico: req.userId }).sort({ createdAt: -1 });
-  res.json(projetos);
+  try {
+    const projetos = await Project.find({ tecnico: req.userId })
+      .sort({ createdAt: -1 });
+
+    res.json(projetos);
+
+  } catch (err) {
+    console.error("ERRO ME:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
+
 
 // ===============================
 // TÉCNICO – BUSCAR SERVIÇO POR ID
