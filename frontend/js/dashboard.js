@@ -1,4 +1,4 @@
-const API = "https://gerenciador-de-os.onrender.com";
+const API = "https://gerenciador-de-os.onrender.com/projects";
 const token = localStorage.getItem("token");
 
 if (!token) {
@@ -12,70 +12,67 @@ async function carregarDashboard() {
   lista.innerHTML = "Carregando...";
 
   try {
-    const res = await fetch(`${API}/projects/me`, {
+    const res = await fetch(`${API}/me`, {
       headers: {
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       }
     });
 
-    let data = {};
-    try {
-      data = await res.json();
-    } catch (e) {
-      console.error("Erro ao converter JSON", e);
-      lista.innerHTML = "Erro ao ler resposta do servidor";
-      return;
-    }
+    const data = await res.json();
 
     if (!res.ok) {
       lista.innerHTML = data.error || "Erro ao carregar serviços";
       return;
     }
 
-    const atual = data.atual || null;
-    const hoje = Array.isArray(data.hoje) ? data.hoje : [];
-
     lista.innerHTML = "";
 
     // =========================
     // SERVIÇO EM ANDAMENTO
     // =========================
-    if (atual) {
+    if (data.atual) {
       const div = document.createElement("div");
+      div.className = "card";
+
       div.innerHTML = `
         <h3>🔧 Serviço em andamento</h3>
-        <strong>${atual.cliente || "Cliente não informado"}</strong><br>
-        <button onclick="abrirServico('${atual._id}')">Abrir serviço</button>
-        <hr>
+        <strong>${data.atual.cliente}</strong><br>
+        <small>${data.atual.endereco || ""}</small><br><br>
+        <button onclick="abrirServico('${data.atual._id}')">Abrir serviço</button>
       `;
+
       lista.appendChild(div);
     }
 
     // =========================
     // SERVIÇOS DE HOJE
     // =========================
-    if (hoje.length > 0) {
+    if (data.hoje && data.hoje.length > 0) {
       const titulo = document.createElement("h3");
       titulo.innerText = "📅 Serviços de hoje";
       lista.appendChild(titulo);
 
-      hoje.forEach(servico => {
+      data.hoje.forEach(servico => {
         const div = document.createElement("div");
+        div.className = "card";
+
         div.innerHTML = `
-          <strong>${servico.cliente || "Cliente não informado"}</strong> - ${servico.status || ""}<br>
+          <strong>${servico.cliente}</strong><br>
+          <small>${servico.endereco || ""}</small><br>
+          <span>Status: ${servico.status}</span><br><br>
           <button onclick="abrirServico('${servico._id}')">Ver</button>
-          <hr>
         `;
+
         lista.appendChild(div);
       });
     }
 
-    if (!atual && hoje.length === 0) {
-      lista.innerHTML = "Nenhum serviço hoje.";
+    if (!data.atual && (!data.hoje || data.hoje.length === 0)) {
+      lista.innerHTML = "<p>Nenhum serviço hoje.</p>";
     }
 
   } catch (err) {
-    console.error("ERRO DASHBOARD:", err);
+    console.error(err);
     lista.innerHTML = "Erro de conexão com o servidor";
   }
 }

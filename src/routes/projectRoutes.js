@@ -4,12 +4,19 @@ const Project = require("../models/Project");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
 const cloudinary = require("../config/cloudinary");
+const PDFDocument = require("pdfkit");
+const axios = require("axios");
 
 // ===============================
 // TÉCNICO – INICIAR SERVIÇO
 // ===============================
 router.post("/start", auth, async (req, res) => {
   try {
+    // 🔒 BLOQUEIA ADMIN
+    if (req.userRole !== "tecnico") {
+      return res.status(403).json({ error: "Apenas técnico pode abrir chamado" });
+    }
+
     const { cliente, unidade, marca, endereco, tipoServico } = req.body;
 
     if (!cliente || !endereco || !tipoServico) {
@@ -118,7 +125,7 @@ router.post("/admin/create", auth, async (req, res) => {
 // ===============================
 // TÉCNICO – BUSCAR SERVIÇO POR ID
 // ===============================
-router.get("/:id", auth, async (req, res) => {
+router.get("/servico/:id", auth, async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
@@ -139,7 +146,7 @@ router.get("/:id", auth, async (req, res) => {
 // ===============================
 // TÉCNICO – ENVIAR ANTES
 // ===============================
-router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
+router.post("/servico/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
@@ -175,7 +182,7 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
 // ===============================
 // TÉCNICO – ENVIAR DEPOIS
 // ===============================
-router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
+router.post("/servico/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
@@ -214,10 +221,7 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 // ===============================
 // PDF
 // ===============================
-const PDFDocument = require("pdfkit");
-const axios = require("axios");
-
-router.get("/:id/pdf", auth, async (req, res) => {
+router.get("/servico/:id/pdf", auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id).populate("tecnico", "nome");
 
