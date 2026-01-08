@@ -1,21 +1,19 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
-document.addEventListener("DOMContentLoaded", () => {
+let tecnicosCache = []; // 🔥 AGORA DEFINIDO
 
+document.addEventListener("DOMContentLoaded", () => {
   const inputCliente = document.getElementById("cliente");
-  const listaUnidades = document.getElementById("listaUnidades");
-  const boxTimao = document.getElementById("boxTimao");
 
   if (!inputCliente) {
-    console.error("❌ input cliente não encontrado no HTML");
+    console.error("❌ input #cliente não encontrado no HTML");
     return;
   }
 
   inputCliente.addEventListener("input", buscarUnidades);
 
   carregarTecnicos();
-
 });
 
 // ===============================
@@ -28,6 +26,7 @@ async function carregarTecnicos() {
     });
 
     const tecnicos = await res.json();
+    tecnicosCache = tecnicos;
 
     const select = document.getElementById("tecnico");
     select.innerHTML = `<option value="">Selecione o técnico</option>`;
@@ -46,16 +45,23 @@ async function carregarTecnicos() {
 }
 
 // ===============================
-// BUSCAR UNIDADES (TIMÃO)
+// BUSCAR UNIDADES (SÓ TIMÃO)
 // ===============================
 async function buscarUnidades() {
   const nome = document.getElementById("cliente").value.trim().toLowerCase();
   const listaUnidades = document.getElementById("listaUnidades");
   const boxTimao = document.getElementById("boxTimao");
 
+  if (!listaUnidades || !boxTimao) {
+    console.error("❌ listaUnidades ou boxTimao não encontrados no HTML");
+    return;
+  }
+
   if (nome !== "timao") {
     listaUnidades.innerHTML = "";
     boxTimao.style.display = "none";
+    document.getElementById("unidade").value = "";
+    document.getElementById("marca").value = "";
     return;
   }
 
@@ -67,6 +73,11 @@ async function buscarUnidades() {
 
     listaUnidades.innerHTML = "";
 
+    if (unidades.length === 0) {
+      listaUnidades.innerHTML = "<li>Nenhuma unidade encontrada</li>";
+      return;
+    }
+
     unidades.forEach(u => {
       const li = document.createElement("li");
       li.innerText = `${u.nome} - ${u.marca}`;
@@ -75,7 +86,7 @@ async function buscarUnidades() {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao buscar unidades:", err);
   }
 }
 
@@ -85,6 +96,9 @@ function selecionarUnidade(unidade) {
   document.getElementById("listaUnidades").innerHTML = "";
 }
 
+// ===============================
+// CRIAR SERVIÇO (ADMIN)
+// ===============================
 async function criarServicoAdmin() {
   const cliente = document.getElementById("cliente").value;
   const unidade = document.getElementById("unidade").value;
@@ -145,13 +159,13 @@ Acesse o sistema para iniciar o atendimento.`;
       window.open(link, "_blank");
     }
 
-    msg.innerText = "Serviço criado e WhatsApp enviado!";
+    msg.innerText = "Serviço criado com sucesso!";
     setTimeout(() => {
       window.location.href = "admin.html";
     }, 1000);
 
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao criar serviço:", err);
     msg.innerText = "Erro de conexão com o servidor";
   }
 }

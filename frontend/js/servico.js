@@ -73,9 +73,9 @@ async function salvarAntes() {
   alert("ANTES salvo com sucesso!");
 }
 
-// ===============================
+
 // SALVAR DEPOIS
-// ===============================
+
 async function salvarDepois() {
   const fotos = document.getElementById("fotosDepois").files;
   const relatorio = document.getElementById("relatorioDepois").value;
