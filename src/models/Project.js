@@ -15,11 +15,12 @@ const ProjectSchema = new mongoose.Schema({
     required: true
   },
 
-  status: {
-    type: String,
-    enum: ["em_andamento", "concluido"],
-    default: "em_andamento"
-  },
+ status: {
+  type: String,
+  enum: ["aguardando_tecnico", "em_andamento", "concluido"],
+  default: "aguardando_tecnico"
+},
+
 
   dataServico: {
     type: Date,

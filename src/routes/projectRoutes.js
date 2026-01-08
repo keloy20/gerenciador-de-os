@@ -78,6 +78,11 @@ router.get("/:id", auth, async (req, res) => {
     if (!project) {
       return res.status(404).json({ error: "Serviço não encontrado" });
     }
+    if (project.status === "aguardando tecnico") {
+  project.status = "em andamento";
+  await project.save();
+}
+
 
     res.json(project);
 
@@ -209,7 +214,7 @@ router.post("/admin/create", auth, async (req, res) => {
       endereco,
       tipoServico,
       tecnico: tecnicoId,
-      status: "em_andamento",
+      status:"aguardando tecnico",
       dataServico: new Date()
     });
 
@@ -222,9 +227,9 @@ router.post("/admin/create", auth, async (req, res) => {
 });
 
 
-// ==========================================
+
 // ADMIN – GERAR PDF
-// ==========================================
+
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {

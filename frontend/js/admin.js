@@ -42,42 +42,46 @@ async function carregarAdmin() {
 // ===============================
 // RENDERIZAR LISTA
 // ===============================
-function renderizarServicos(servicos) {
-  const lista = document.getElementById("listaAdmin");
-  lista.innerHTML = "";
+servicos.forEach(servico => {
+  const div = document.createElement("div");
+  div.classList.add("card");
 
-  if (servicos.length === 0) {
-    lista.innerHTML = "Nenhum serviço encontrado.";
-    return;
+  let statusLabel = "";
+  let statusClass = "";
+
+  if (servico.status === "aguardando_tecnico") {
+    statusLabel = "Aguardando técnico";
+    statusClass = "status-aguardando";
+  } else if (servico.status === "em_andamento") {
+    statusLabel = "Em andamento";
+    statusClass = "status-andamento";
+  } else if (servico.status === "concluido") {
+    statusLabel = "Concluído";
+    statusClass = "status-concluido";
+  } else {
+    statusLabel = servico.status;
+    statusClass = "";
   }
 
-  servicos.forEach(servico => {
-    const div = document.createElement("div");
-    div.classList.add("card");
+  const tecnicoNome = servico.tecnico?.nome || "—";
 
-    const statusClass = servico.status === "concluido" ? "status-concluido" : "status-pendente";
-    const tecnicoNome = servico.tecnico?.nome || "—";
+  div.innerHTML = `
+    <strong>Cliente:</strong> ${servico.cliente}<br>
+    <strong>Técnico:</strong> ${tecnicoNome}<br>
+    <strong>Status:</strong> 
+    <span class="status ${statusClass}">● ${statusLabel}</span>
+    <br><br>
 
-    div.innerHTML = `
-      <strong>Cliente:</strong> ${servico.cliente}<br>
-      <strong>Técnico:</strong> ${tecnicoNome}<br>
-      <strong>Status:</strong> 
-      <span class="badge ${statusClass}">
-        ${servico.status === "concluido" ? "Concluído" : "Em andamento"}
-      </span>
-      <br><br>
+    <button onclick="abrirPDF('${servico._id}')">📄 PDF</button>
+    <hr>
+  `;
 
-      <button onclick="abrirPDF('${servico._id}')">📄 PDF</button>
-      <hr>
-    `;
+  lista.appendChild(div);
+});
 
-    lista.appendChild(div);
-  });
-}
 
-// ===============================
 // FILTRO
-// ===============================
+
 function filtrarServicos() {
   const texto = document.getElementById("busca").value.toLowerCase();
 
@@ -90,9 +94,8 @@ function filtrarServicos() {
   renderizarServicos(filtrados);
 }
 
-// ===============================
 // ABRIR PDF
-// ===============================
+
 function abrirPDF(id) {
   window.open(`${API}/projects/${id}/pdf?token=${token}`, "_blank");
 }
