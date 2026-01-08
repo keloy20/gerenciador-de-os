@@ -4,10 +4,12 @@ const Project = require("../models/Project");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
 const cloudinary = require("../config/cloudinary");
+const PDFDocument = require("pdfkit");
+const axios = require("axios");
 
-// ===============================
-// TÉCNICO – ABRIR SERVIÇO
-// ===============================
+// ==========================================
+// TÉCNICO – CRIAR SERVIÇO (PARA ELE MESMO)
+// ==========================================
 router.post("/start", auth, async (req, res) => {
   try {
     const { cliente, unidade, marca, endereco, tipoServico } = req.body;
@@ -16,14 +18,15 @@ router.post("/start", auth, async (req, res) => {
       return res.status(400).json({ error: "Cliente, endereço e tipo de serviço são obrigatórios" });
     }
 
+    // 🔴 REGRA DO TIMÃO
     if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
-      return res.status(400).json({ error: "Unidade e marca são obrigatórias para Timão" });
+      return res.status(400).json({ error: "Unidade e marca são obrigatórias para o cliente Timão" });
     }
 
     const project = await Project.create({
       cliente,
-      unidade: cliente.toLowerCase() === "timao" ? unidade : "",
-      marca: cliente.toLowerCase() === "timao" ? marca : "",
+      unidade: cliente.toLowerCase() === "timao" ? unidade : null,
+      marca: cliente.toLowerCase() === "timao" ? marca : null,
       endereco,
       tipoServico,
       tecnico: req.userId,
@@ -39,24 +42,32 @@ router.post("/start", auth, async (req, res) => {
   }
 });
 
-// ===============================
+
+// ==========================================
 // TÉCNICO – MEUS SERVIÇOS
-// ===============================
+// ==========================================
 router.get("/me", auth, async (req, res) => {
   try {
-    const servicos = await Project.find({ tecnico: req.userId })
-      .sort({ createdAt: -1 });
+    const atual = await Project.findOne({
+      tecnico: req.userId,
+      status: "em_andamento"
+    });
 
-    res.json(servicos);
+    const hoje = await Project.find({
+      tecnico: req.userId
+    }).sort({ createdAt: -1 });
+
+    res.json({ atual, hoje });
 
   } catch (err) {
     res.status(500).json({ error: "Erro ao buscar serviços" });
   }
 });
 
-// ===============================
+
+// ==========================================
 // TÉCNICO – BUSCAR SERVIÇO POR ID
-// ===============================
+// ==========================================
 router.get("/:id", auth, async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -75,9 +86,10 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
-// ===============================
+
+// ==========================================
 // TÉCNICO – ENVIAR ANTES
-// ===============================
+// ==========================================
 router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -85,9 +97,7 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
       tecnico: req.userId
     });
 
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
+    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
 
     const urls = [];
 
@@ -104,17 +114,18 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
 
     await project.save();
 
-    res.json({ success: true });
+    res.json(project);
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erro ao salvar antes" });
+    res.status(500).json({ error: "Erro ao enviar antes" });
   }
 });
 
-// ===============================
+
+// ==========================================
 // TÉCNICO – ENVIAR DEPOIS
-// ===============================
+// ==========================================
 router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -122,9 +133,7 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
       tecnico: req.userId
     });
 
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
+    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
 
     const urls = [];
 
@@ -143,17 +152,18 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 
     await project.save();
 
-    res.json({ success: true });
+    res.json(project);
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erro ao salvar depois" });
+    res.status(500).json({ error: "Erro ao enviar depois" });
   }
 });
 
-// ===============================
-// ADMIN – TODOS OS SERVIÇOS
-// ===============================
+
+// ==========================================
+// ADMIN – LISTAR TODOS OS SERVIÇOS
+// ==========================================
 router.get("/admin/all", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -167,16 +177,54 @@ router.get("/admin/all", auth, async (req, res) => {
     res.json(projects);
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Erro ao buscar serviços" });
   }
 });
 
-// ===============================
-// ADMIN – GERAR PDF
-// ===============================
-const PDFDocument = require("pdfkit");
-const axios = require("axios");
 
+// ==========================================
+// ADMIN – CRIAR SERVIÇO PARA TÉCNICO
+// ==========================================
+router.post("/admin/create", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin pode criar serviço" });
+  }
+
+  const { cliente, unidade, marca, endereco, tipoServico, tecnicoId } = req.body;
+
+  if (!cliente || !endereco || !tipoServico || !tecnicoId) {
+    return res.status(400).json({ error: "Preencha todos os campos" });
+  }
+
+  if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
+    return res.status(400).json({ error: "Unidade e marca são obrigatórias para o cliente Timão" });
+  }
+
+  try {
+    const project = await Project.create({
+      cliente,
+      unidade: cliente.toLowerCase() === "timao" ? unidade : null,
+      marca: cliente.toLowerCase() === "timao" ? marca : null,
+      endereco,
+      tipoServico,
+      tecnico: tecnicoId,
+      status: "em_andamento",
+      dataServico: new Date()
+    });
+
+    res.status(201).json(project);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao criar serviço" });
+  }
+});
+
+
+// ==========================================
+// ADMIN – GERAR PDF
+// ==========================================
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -185,9 +233,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
 
     const project = await Project.findById(req.params.id).populate("tecnico", "nome");
 
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
+    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
 
     const doc = new PDFDocument({ margin: 40 });
 
@@ -202,12 +248,13 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.fontSize(12).text(`Cliente: ${project.cliente}`);
     doc.text(`Unidade: ${project.unidade || "-"}`);
     doc.text(`Marca: ${project.marca || "-"}`);
-    doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
+    doc.text(`Técnico: ${project.tecnico?.nome || "N/A"}`);
     doc.text(`Status: ${project.status}`);
     doc.moveDown();
 
     doc.fontSize(14).text("ANTES", { underline: true });
-    doc.text(project.antes?.relatorio || "Sem relatório");
+    doc.moveDown(0.5);
+    doc.fontSize(11).text(project.antes?.relatorio || "Sem relatório");
     doc.moveDown();
 
     if (project.antes?.fotos?.length) {
@@ -219,8 +266,10 @@ router.get("/:id/pdf", auth, async (req, res) => {
     }
 
     doc.addPage();
+
     doc.fontSize(14).text("DEPOIS", { underline: true });
-    doc.text(project.depois?.relatorio || "Sem relatório");
+    doc.moveDown(0.5);
+    doc.fontSize(11).text(project.depois?.relatorio || "Sem relatório");
     doc.moveDown();
 
     if (project.depois?.fotos?.length) {
@@ -234,7 +283,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.end();
 
   } catch (err) {
-    console.error(err);
+    console.error("ERRO PDF:", err);
     res.status(500).json({ error: "Erro ao gerar PDF" });
   }
 });

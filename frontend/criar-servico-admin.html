@@ -1,56 +1,148 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Novo Serviço - Admin</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+const API = "https://gerenciador-de-os.onrender.com";
+const token = localStorage.getItem("token");
 
-<header>Novo Serviço (Admin)</header>
+const inputCliente = document.getElementById("cliente");
+const listaUnidades = document.getElementById("listaUnidades");
+const boxTimao = document.getElementById("boxTimão");
 
-<div class="menu">
-  <a href="admin.html">Voltar</a>
-</div>
+let tecnicosCache = [];
 
-<div class="container">
-  <div class="card">
-    <h3>Criar Serviço</h3>
+document.addEventListener("DOMContentLoaded", () => {
+  carregarTecnicos();
+});
 
-    <!-- CLIENTE / UNIDADE -->
-    <label>Cliente / Unidade</label>
-    <input 
-      type="text" 
-      id="clienteBusca" 
-      placeholder="Digite (ex: timao)"
-      autocomplete="off"
-    >
+inputCliente.addEventListener("input", buscarUnidades);
 
-    <ul id="listaUnidades" class="autocomplete-list"></ul>
+// ===============================
+// CARREGAR TÉCNICOS
+// ===============================
+async function carregarTecnicos() {
+  try {
+    const res = await fetch(`${API}/auth/tecnicos`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-    <!-- CAMPOS OCULTOS -->
-    <input type="hidden" id="cliente">
-    <input type="hidden" id="unidade">
-    <input type="hidden" id="marca">
+    const tecnicos = await res.json();
+    tecnicosCache = tecnicos;
 
-    <!-- ENDEREÇO -->
-    <label>Endereço</label>
-    <input type="text" id="endereco" placeholder="Endereço do local">
+    const select = document.getElementById("tecnico");
+    select.innerHTML = `<option value="">Selecione o técnico</option>`;
 
-    <!-- TIPO DE SERVIÇO -->
-    <label>Tipo de Serviço</label>
-    <input type="text" id="tipoServico" placeholder="Ex: Manutenção, Instalação">
+    tecnicos.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t._id;
+      opt.innerText = t.nome;
+      select.appendChild(opt);
+    });
 
-    <!-- TÉCNICO -->
-    <label>Técnico</label>
-    <select id="tecnico"></select>
+  } catch (err) {
+    console.error("Erro ao carregar técnicos:", err);
+    alert("Erro ao carregar técnicos");
+  }
+}
 
-    <button onclick="criarServico()">Criar Serviço</button>
+// ===============================
+// BUSCAR UNIDADES (SÓ SE FOR TIMÃO)
+// ===============================
+async function buscarUnidades() {
+  const nome = inputCliente.value.trim();
 
-    <p id="msg"></p>
-  </div>
-</div>
+  if (nome.length < 2) {
+    listaUnidades.innerHTML = "";
+    boxTimao.style.display = "none";
+    return;
+  }
 
-<script src="js/criar-servico-admin.js"></script>
-</body>
-</html>
+  if (nome.toLowerCase() !== "timao") {
+    listaUnidades.innerHTML = "";
+    boxTimao.style.display = "none";
+    return;
+  }
+
+  boxTimao.style.display = "block";
+
+  try {
+    const res = await fetch(`${API}/clientes/buscar?nome=${encodeURIComponent(nome)}`);
+    const unidades = await res.json();
+
+    listaUnidades.innerHTML = "";
+
+    if (unidades.length === 0) {
+      listaUnidades.innerHTML = `<li>Nenhuma unidade encontrada</li>`;
+      return;
+    }
+
+    unidades.forEach(u => {
+      const li = document.createElement("li");
+      li.innerText = `${u.nome} - ${u.marca}`;
+      li.onclick = () => selecionarUnidade(u);
+      listaUnidades.appendChild(li);
+    });
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function selecionarUnidade(unidade) {
+  document.getElementById("unidade").value = unidade.nome;
+  document.getElementById("marca").value = unidade.marca;
+  listaUnidades.innerHTML = "";
+}
+
+// ===============================
+// CRIAR SERVIÇO (ADMIN)
+// ===============================
+async function criarServicoAdmin() {
+  const cliente = document.getElementById("cliente").value;
+  const unidade = document.getElementById("unidade").value;
+  const marca = document.getElementById("marca").value;
+  const endereco = document.getElementById("endereco").value;
+  const tipoServico = document.getElementById("tipoServico").value;
+  const tecnicoId = document.getElementById("tecnico").value;
+  const msg = document.getElementById("msg");
+
+  if (!cliente || !endereco || !tipoServico || !tecnicoId) {
+    msg.innerText = "Preencha todos os campos";
+    return;
+  }
+
+  if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
+    msg.innerText = "Selecione a unidade e marca do Timão";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/projects/admin/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        cliente,
+        unidade,
+        marca,
+        endereco,
+        tipoServico,
+        tecnicoId
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.innerText = data.error || "Erro ao criar serviço";
+      return;
+    }
+
+    msg.innerText = "Serviço criado com sucesso!";
+    setTimeout(() => {
+      window.location.href = "admin.html";
+    }, 1000);
+
+  } catch (err) {
+    console.error(err);
+    msg.innerText = "Erro de conexão com o servidor";
+  }
+}
