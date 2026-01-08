@@ -101,9 +101,6 @@ button:hover {
   margin-top: 10px;
 }
 
-/* ============================= */
-/* AUTOCOMPLETE – UNIDADES */
-/* ============================= */
 
 .autocomplete-list {
   list-style: none;
@@ -136,7 +133,7 @@ button:hover {
 /* ============================= */
 
 .campo-unidade {
-  display: none; /* 🔥 começa escondido */
+  display: none; 
 }
 
 #msg {
