@@ -33,26 +33,19 @@ async function carregarDashboard() {
     }
 
     servicos.forEach(servico => {
-      const statusClass =
-        servico.status === "concluido" ? "status-concluido" :
-        servico.status === "em_andamento" ? "status-andamento" :
-        "status-aguardando";
-
-      const statusTexto =
-        servico.status === "concluido" ? "Concluído" :
-        servico.status === "em_andamento" ? "Em andamento" :
-        "Aguardando técnico";
-
       const div = document.createElement("div");
       div.classList.add("card");
 
+      let statusLabel = "";
+      if (servico.status === "aguardando_tecnico") statusLabel = "Aguardando técnico";
+      if (servico.status === "em_andamento") statusLabel = "Em andamento";
+      if (servico.status === "concluido") statusLabel = "Concluído";
+
       div.innerHTML = `
-        <strong>OS:</strong> ${servico.osNumero || "-"}<br>
         <strong>Cliente:</strong> ${servico.cliente}<br>
-        <strong>Status:</strong>
-        <span class="badge ${statusClass}">${statusTexto}</span>
-        <br><br>
+        <strong>Status:</strong> ${statusLabel}<br><br>
         <button onclick="abrirServico('${servico._id}')">Abrir serviço</button>
+        <hr>
       `;
 
       lista.appendChild(div);
@@ -67,8 +60,4 @@ async function carregarDashboard() {
 function abrirServico(id) {
   localStorage.setItem("servicoId", id);
   window.location.href = "servico.html";
-}
-
-function novoServico() {
-  window.location.href = "novo-servico.html";
 }
