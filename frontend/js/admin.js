@@ -1,9 +1,10 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
+const role = localStorage.getItem("role");
 
 let todosServicos = [];
 
-if (!token) {
+if (!token| role !== "admin")  {
   window.location.href = "login.html";
 }
 

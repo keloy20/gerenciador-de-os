@@ -5,6 +5,7 @@ if (!token) {
   window.location.href = "login.html";
 }
 
+
 document.addEventListener("DOMContentLoaded", carregarDashboard);
 
 async function carregarDashboard() {
@@ -97,3 +98,7 @@ function abrirServico(id) {
   localStorage.setItem("servicoId", id);
   window.location.href = "servico.html";
 }
+
+setInterval(() => {
+  carregarDashboard();
+}, 10000); // a cada 10 segundos

@@ -1,6 +1,10 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
+if (!token) {
+  window.location.href = "login.html";
+}
+
 let tecnicosCache = [];
 
 document.addEventListener("DOMContentLoaded", () => {

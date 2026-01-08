@@ -78,18 +78,20 @@ router.get("/:id", auth, async (req, res) => {
     if (!project) {
       return res.status(404).json({ error: "Serviço não encontrado" });
     }
-    if (project.status === "aguardando tecnico") {
-  project.status = "em andamento";
-  await project.save();
-}
 
+    // 🔥 AQUI MUDA O STATUS AUTOMATICAMENTE
+    if (project.status === "aguardando_tecnico") {
+      project.status = "em_andamento";
+      await project.save();
+    }
 
     res.json(project);
 
   } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar serviço" });
+    res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // ==========================================

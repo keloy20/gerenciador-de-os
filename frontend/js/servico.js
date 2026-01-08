@@ -1,11 +1,12 @@
 const API = "https://gerenciador-de-os.onrender.com";
-const token = localStorage.getItem("token");
 const servicoId = localStorage.getItem("servicoId");
 
-if (!token || !servicoId) {
-  alert("Sessão expirada. Faça login novamente.");
+const token = localStorage.getItem("token");
+
+if (!token) {
   window.location.href = "login.html";
 }
+
 
 // ===============================
 // CARREGAR SERVIÇO
