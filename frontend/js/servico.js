@@ -28,33 +28,40 @@ async function carregarServico() {
       return;
     }
 
+    // Nome do cliente
     document.getElementById("clienteNome").innerText = servico.cliente || "Cliente";
 
-    // ANTES
+    // ---------- ANTES ----------
     const antesDiv = document.getElementById("fotosAntesPreview");
     antesDiv.innerHTML = "";
 
-    if (servico.antes && servico.antes.fotos) {
+    if (servico.antes && servico.antes.fotos && servico.antes.fotos.length > 0) {
       servico.antes.fotos.forEach(url => {
-        antesDiv.innerHTML += `<img src="${url}">`;
+        const img = document.createElement("img");
+        img.src = url;
+        antesDiv.appendChild(img);
       });
-      document.getElementById("relatorioAntes").value = servico.antes.relatorio || "";
     }
 
-    // DEPOIS
+    document.getElementById("relatorioAntes").value = servico.antes?.relatorio || "";
+
+    // ---------- DEPOIS ----------
     const depoisDiv = document.getElementById("fotosDepoisPreview");
     depoisDiv.innerHTML = "";
 
-    if (servico.depois && servico.depois.fotos) {
+    if (servico.depois && servico.depois.fotos && servico.depois.fotos.length > 0) {
       servico.depois.fotos.forEach(url => {
-        depoisDiv.innerHTML += `<img src="${url}">`;
+        const img = document.createElement("img");
+        img.src = url;
+        depoisDiv.appendChild(img);
       });
-      document.getElementById("relatorioDepois").value = servico.depois.relatorio || "";
     }
+
+    document.getElementById("relatorioDepois").value = servico.depois?.relatorio || "";
 
   } catch (err) {
     console.error(err);
-    alert("Erro de conexão com o servidor");
+    alert("Erro de conexão com o servidor ao carregar serviço");
   }
 }
 
@@ -66,7 +73,7 @@ async function salvarAntes() {
   const relatorio = document.getElementById("relatorioAntes").value;
 
   if (!input) {
-    alert("Input fotosAntes não encontrado");
+    alert("Input de fotos ANTES não encontrado");
     return;
   }
 
@@ -118,7 +125,7 @@ async function salvarDepois() {
   const relatorio = document.getElementById("relatorioDepois").value;
 
   if (!input) {
-    alert("Input fotosDepois não encontrado");
+    alert("Input de fotos DEPOIS não encontrado");
     return;
   }
 
@@ -153,11 +160,15 @@ async function salvarDepois() {
       return;
     }
 
-    alert("DEPOIS salvo com sucesso!");
-    carregarServico();
+    alert("Serviço finalizado com sucesso!");
+
+    // 🔥 limpa o servicoId e volta pro dashboard
+    localStorage.removeItem("servicoId");
+    window.location.href = "dashboard.html";
 
   } catch (err) {
     console.error(err);
     alert("Erro de conexão ao salvar DEPOIS");
   }
 }
+
