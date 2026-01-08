@@ -4,10 +4,10 @@ const Project = require("../models/Project");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
 const cloudinary = require("../config/cloudinary");
-const PDFDocument = require("pdfkit");
-const axios = require("axios");
 
-// TÉCNICO – INICIAR SERVIÇO
+// ===============================
+// TÉCNICO – ABRIR SERVIÇO
+// ===============================
 router.post("/start", auth, async (req, res) => {
   try {
     const { cliente, unidade, marca, endereco, tipoServico } = req.body;
@@ -17,92 +17,76 @@ router.post("/start", auth, async (req, res) => {
     }
 
     if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
-      return res.status(400).json({ error: "Unidade e marca são obrigatórias para o cliente Timão" });
+      return res.status(400).json({ error: "Unidade e marca são obrigatórias para Timão" });
     }
 
     const project = await Project.create({
       cliente,
-      unidade: cliente.toLowerCase() === "timao" ? unidade : null,
-      marca: cliente.toLowerCase() === "timao" ? marca : null,
+      unidade: cliente.toLowerCase() === "timao" ? unidade : "",
+      marca: cliente.toLowerCase() === "timao" ? marca : "",
       endereco,
       tipoServico,
       tecnico: req.userId,
-      status: "em_andamento"
+      status: "em_andamento",
+      dataServico: new Date()
     });
 
-    return res.status(201).json(project);
+    res.status(201).json(project);
 
   } catch (err) {
     console.error("ERRO START:", err);
-    return res.status(500).json({ error: "Erro ao criar serviço" });
+    res.status(500).json({ error: "Erro ao criar serviço" });
   }
 });
 
-// TÉCNICO – MEUS SERVIÇOS (HISTÓRICO)
-
+// ===============================
+// TÉCNICO – MEUS SERVIÇOS
+// ===============================
 router.get("/me", auth, async (req, res) => {
   try {
-    const atual = await Project.findOne({
-      tecnico: req.userId,
-      status: "em_andamento"
-    });
+    const servicos = await Project.find({ tecnico: req.userId })
+      .sort({ createdAt: -1 });
 
-    const historico = await Project.find({
-      tecnico: req.userId
-    }).sort({ createdAt: -1 });
-
-    return res.json({ atual, historico });
+    res.json(servicos);
 
   } catch (err) {
-    console.error("ERRO ME:", err);
-    return res.status(500).json({ error: "Erro ao buscar serviços" });
+    res.status(500).json({ error: "Erro ao buscar serviços" });
   }
 });
 
-// BUSCAR SERVIÇO POR ID (ADMIN OU TÉCNICO DONO)
-
+// ===============================
+// TÉCNICO – BUSCAR SERVIÇO POR ID
+// ===============================
 router.get("/:id", auth, async (req, res) => {
   try {
-    let project;
-
-    if (req.userRole === "admin") {
-      project = await Project.findById(req.params.id).populate("tecnico", "nome email");
-    } else {
-      project = await Project.findOne({
-        _id: req.params.id,
-        tecnico: req.userId
-      });
-    }
+    const project = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
 
     if (!project) {
       return res.status(404).json({ error: "Serviço não encontrado" });
     }
 
-    return res.json(project);
+    res.json(project);
 
   } catch (err) {
-    console.error("ERRO GET ID:", err);
-    return res.status(500).json({ error: "Erro ao buscar serviço" });
+    res.status(500).json({ error: "Erro ao buscar serviço" });
   }
 });
 
-// ENVIAR / EDITAR ANTES (ADMIN OU TÉCNICO DONO)
-
+// ===============================
+// TÉCNICO – ENVIAR ANTES
+// ===============================
 router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   try {
-    let project;
-
-    if (req.userRole === "admin") {
-      project = await Project.findById(req.params.id);
-    } else {
-      project = await Project.findOne({
-        _id: req.params.id,
-        tecnico: req.userId
-      });
-    }
+    const project = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
 
     if (!project) {
-      return res.status(404).json({ error: "Projeto não encontrado" });
+      return res.status(404).json({ error: "Serviço não encontrado" });
     }
 
     const urls = [];
@@ -120,31 +104,26 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
 
     await project.save();
 
-    return res.json(project);
+    res.json({ success: true });
 
   } catch (err) {
-    console.error("ERRO ANTES:", err);
-    return res.status(500).json({ error: "Erro ao salvar ANTES" });
+    console.error(err);
+    res.status(500).json({ error: "Erro ao salvar antes" });
   }
 });
 
-// ENVIAR / EDITAR DEPOIS (ADMIN OU TÉCNICO DONO)
-
+// ===============================
+// TÉCNICO – ENVIAR DEPOIS
+// ===============================
 router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   try {
-    let project;
-
-    if (req.userRole === "admin") {
-      project = await Project.findById(req.params.id);
-    } else {
-      project = await Project.findOne({
-        _id: req.params.id,
-        tecnico: req.userId
-      });
-    }
+    const project = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
 
     if (!project) {
-      return res.status(404).json({ error: "Projeto não encontrado" });
+      return res.status(404).json({ error: "Serviço não encontrado" });
     }
 
     const urls = [];
@@ -164,16 +143,17 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 
     await project.save();
 
-    return res.json(project);
+    res.json({ success: true });
 
   } catch (err) {
-    console.error("ERRO DEPOIS:", err);
-    return res.status(500).json({ error: "Erro ao salvar DEPOIS" });
+    console.error(err);
+    res.status(500).json({ error: "Erro ao salvar depois" });
   }
 });
 
+// ===============================
 // ADMIN – TODOS OS SERVIÇOS
-
+// ===============================
 router.get("/admin/all", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -184,15 +164,18 @@ router.get("/admin/all", auth, async (req, res) => {
       .populate("tecnico", "nome email")
       .sort({ createdAt: -1 });
 
-    return res.json(projects);
+    res.json(projects);
 
   } catch (err) {
-    console.error("ERRO ADMIN ALL:", err);
-    return res.status(500).json({ error: "Erro ao buscar serviços" });
+    res.status(500).json({ error: "Erro ao buscar serviços" });
   }
 });
 
+// ===============================
 // ADMIN – GERAR PDF
+// ===============================
+const PDFDocument = require("pdfkit");
+const axios = require("axios");
 
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
@@ -219,13 +202,12 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.fontSize(12).text(`Cliente: ${project.cliente}`);
     doc.text(`Unidade: ${project.unidade || "-"}`);
     doc.text(`Marca: ${project.marca || "-"}`);
-    doc.text(`Técnico: ${project.tecnico?.nome || "N/A"}`);
+    doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
     doc.text(`Status: ${project.status}`);
     doc.moveDown();
 
     doc.fontSize(14).text("ANTES", { underline: true });
-    doc.moveDown(0.5);
-    doc.fontSize(11).text(project.antes?.relatorio || "Sem relatório");
+    doc.text(project.antes?.relatorio || "Sem relatório");
     doc.moveDown();
 
     if (project.antes?.fotos?.length) {
@@ -238,8 +220,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
 
     doc.addPage();
     doc.fontSize(14).text("DEPOIS", { underline: true });
-    doc.moveDown(0.5);
-    doc.fontSize(11).text(project.depois?.relatorio || "Sem relatório");
+    doc.text(project.depois?.relatorio || "Sem relatório");
     doc.moveDown();
 
     if (project.depois?.fotos?.length) {
@@ -253,8 +234,8 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.end();
 
   } catch (err) {
-    console.error("ERRO PDF:", err);
-    return res.status(500).json({ error: "Erro ao gerar PDF" });
+    console.error(err);
+    res.status(500).json({ error: "Erro ao gerar PDF" });
   }
 });
 

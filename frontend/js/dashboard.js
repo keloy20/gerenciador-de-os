@@ -5,8 +5,6 @@ if (!token) {
   window.location.href = "login.html";
 }
 
-document.addEventListener("DOMContentLoaded", carregarDashboard);
-
 async function carregarDashboard() {
   const lista = document.getElementById("listaServicos");
   lista.innerHTML = "Carregando...";
@@ -14,63 +12,41 @@ async function carregarDashboard() {
   try {
     const res = await fetch(`${API}/projects/me`, {
       headers: {
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       }
     });
 
     const data = await res.json();
 
-    if (!res.ok) {
-      lista.innerHTML = data.error || "Erro ao carregar serviços";
+    lista.innerHTML = "";
+
+    if (data.length === 0) {
+      lista.innerHTML = "Nenhum serviço encontrado.";
       return;
     }
 
-    lista.innerHTML = "";
-
-    // SERVIÇO EM ANDAMENTO
-    if (data.atual) {
+    data.forEach(servico => {
       const div = document.createElement("div");
+      div.classList.add("card");
+
       div.innerHTML = `
-        <h3>🔧 Serviço em andamento</h3>
-        <strong>${data.atual.cliente}</strong><br>
-        <button onclick="abrirServico('${data.atual._id}')">Abrir serviço</button>
-        <hr>
+        <strong>${servico.cliente}</strong><br>
+        <small>${servico.tipoServico}</small><br>
+        <button onclick="abrirServico('${servico._id}')">Abrir</button>
       `;
+
       lista.appendChild(div);
-    }
-
-    // HISTÓRICO
-    if (data.historico.length > 0) {
-      const titulo = document.createElement("h3");
-      titulo.innerText = "📋 Meus Serviços";
-      lista.appendChild(titulo);
-
-      data.historico.forEach(servico => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <strong>${servico.cliente}</strong> - ${servico.status}<br>
-          <button onclick="abrirServico('${servico._id}')">Ver</button>
-          <hr>
-        `;
-        lista.appendChild(div);
-      });
-    }
-
-    if (!data.atual && data.historico.length === 0) {
-      lista.innerHTML = "Nenhum serviço encontrado.";
-    }
+    });
 
   } catch (err) {
     console.error(err);
-    lista.innerHTML = "Erro de conexão com o servidor";
+    lista.innerHTML = "Erro ao carregar serviços";
   }
-}
-
-function novoServico() {
-  window.location.href = "novo-servico.html";
 }
 
 function abrirServico(id) {
   localStorage.setItem("servicoId", id);
   window.location.href = "servico.html";
 }
+
+carregarDashboard();
