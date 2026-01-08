@@ -162,7 +162,7 @@ Acesse o sistema para iniciar o atendimento.`;
     msg.innerText = "Serviço criado com sucesso!";
     setTimeout(() => {
       window.location.href = "admin.html";
-    }, 1000);
+    }, 800);
 
   } catch (err) {
     console.error("Erro ao criar serviço:", err);

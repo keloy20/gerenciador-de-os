@@ -2,20 +2,19 @@ const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
 if (!token) {
-  alert("⚠️ Você não está logado. Faça login novamente.");
   window.location.href = "login.html";
 }
+
+let todosServicos = [];
+
+document.addEventListener("DOMContentLoaded", carregarAdmin);
 
 // ===============================
 // CARREGAR SERVIÇOS (ADMIN)
 // ===============================
-document.addEventListener("DOMContentLoaded", () => {
-  carregarServicosAdmin();
-});
-
-async function carregarServicosAdmin() {
+async function carregarAdmin() {
   const lista = document.getElementById("listaAdmin");
-  lista.innerHTML = "Carregando...";
+  lista.innerHTML = "Carregando serviços...";
 
   try {
     const res = await fetch(`${API}/projects/admin/all`, {
@@ -24,60 +23,76 @@ async function carregarServicosAdmin() {
       }
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const erro = await res.text();
-      console.error("ERRO ADMIN ALL:", erro);
-      lista.innerHTML = "Erro ao carregar serviços";
+      lista.innerHTML = data.error || "Erro ao carregar serviços";
       return;
     }
 
-    const servicos = await res.json();
-    lista.innerHTML = "";
-
-    if (servicos.length === 0) {
-      lista.innerHTML = "Nenhum serviço encontrado.";
-      return;
-    }
-
-    servicos.forEach(s => {
-      const div = document.createElement("div");
-
-      const statusCor = s.status === "concluido" ? "status-concluido" : "status-pendente";
-
-      div.className = "card";
-      div.innerHTML = `
-        <strong>${s.cliente}</strong><br>
-        Técnico: ${s.tecnico?.nome || "N/A"}<br>
-        <span class="badge ${statusCor}">${s.status}</span><br><br>
-        <button onclick="abrirServico('${s._id}')">Abrir</button>
-      `;
-
-      lista.appendChild(div);
-    });
+    todosServicos = data;
+    renderizarServicos(data);
 
   } catch (err) {
-    console.error("ERRO carregarServicosAdmin:", err);
+    console.error(err);
     lista.innerHTML = "Erro de conexão com o servidor";
   }
 }
 
 // ===============================
-// ABRIR SERVIÇO
+// RENDERIZAR LISTA
 // ===============================
-function abrirServico(id) {
-  localStorage.setItem("servicoId", id);
-  window.location.href = "servico.html";
+function renderizarServicos(servicos) {
+  const lista = document.getElementById("listaAdmin");
+  lista.innerHTML = "";
+
+  if (servicos.length === 0) {
+    lista.innerHTML = "Nenhum serviço encontrado.";
+    return;
+  }
+
+  servicos.forEach(servico => {
+    const div = document.createElement("div");
+    div.classList.add("card");
+
+    const statusClass = servico.status === "concluido" ? "status-concluido" : "status-pendente";
+    const tecnicoNome = servico.tecnico?.nome || "—";
+
+    div.innerHTML = `
+      <strong>Cliente:</strong> ${servico.cliente}<br>
+      <strong>Técnico:</strong> ${tecnicoNome}<br>
+      <strong>Status:</strong> 
+      <span class="badge ${statusClass}">
+        ${servico.status === "concluido" ? "Concluído" : "Em andamento"}
+      </span>
+      <br><br>
+
+      <button onclick="abrirPDF('${servico._id}')">📄 PDF</button>
+      <hr>
+    `;
+
+    lista.appendChild(div);
+  });
 }
 
 // ===============================
 // FILTRO
 // ===============================
 function filtrarServicos() {
-  const termo = document.getElementById("busca").value.toLowerCase();
-  const cards = document.querySelectorAll("#listaAdmin .card");
+  const texto = document.getElementById("busca").value.toLowerCase();
 
-  cards.forEach(card => {
-    const texto = card.innerText.toLowerCase();
-    card.style.display = texto.includes(termo) ? "block" : "none";
+  const filtrados = todosServicos.filter(s => {
+    const cliente = s.cliente?.toLowerCase() || "";
+    const tecnico = s.tecnico?.nome?.toLowerCase() || "";
+    return cliente.includes(texto) || tecnico.includes(texto);
   });
+
+  renderizarServicos(filtrados);
+}
+
+// ===============================
+// ABRIR PDF
+// ===============================
+function abrirPDF(id) {
+  window.open(`${API}/projects/${id}/pdf?token=${token}`, "_blank");
 }
