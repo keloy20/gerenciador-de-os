@@ -36,7 +36,7 @@ router.post("/start", auth, async (req, res) => {
 
   } catch (err) {
     console.error("ERRO START:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Erro ao criar serviço" });
   }
 });
 
@@ -57,19 +57,26 @@ router.get("/me", auth, async (req, res) => {
     return res.json({ atual, historico });
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("ERRO ME:", err);
+    return res.status(500).json({ error: "Erro ao buscar serviços" });
   }
 });
 
 // ===============================
-// TÉCNICO – BUSCAR SERVIÇO POR ID
+// BUSCAR SERVIÇO POR ID (ADMIN OU TÉCNICO DONO)
 // ===============================
 router.get("/:id", auth, async (req, res) => {
   try {
-    const project = await Project.findOne({
-      _id: req.params.id,
-      tecnico: req.userId
-    });
+    let project;
+
+    if (req.userRole === "admin") {
+      project = await Project.findById(req.params.id).populate("tecnico", "nome email");
+    } else {
+      project = await Project.findOne({
+        _id: req.params.id,
+        tecnico: req.userId
+      });
+    }
 
     if (!project) {
       return res.status(404).json({ error: "Serviço não encontrado" });
@@ -78,19 +85,26 @@ router.get("/:id", auth, async (req, res) => {
     return res.json(project);
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("ERRO GET ID:", err);
+    return res.status(500).json({ error: "Erro ao buscar serviço" });
   }
 });
 
 // ===============================
-// TÉCNICO – ENVIAR / EDITAR ANTES
+// ENVIAR / EDITAR ANTES (ADMIN OU TÉCNICO DONO)
 // ===============================
 router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   try {
-    const project = await Project.findOne({
-      _id: req.params.id,
-      tecnico: req.userId
-    });
+    let project;
+
+    if (req.userRole === "admin") {
+      project = await Project.findById(req.params.id);
+    } else {
+      project = await Project.findOne({
+        _id: req.params.id,
+        tecnico: req.userId
+      });
+    }
 
     if (!project) {
       return res.status(404).json({ error: "Projeto não encontrado" });
@@ -111,22 +125,29 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
 
     await project.save();
 
-    return res.status(200).json(project);
+    return res.json(project);
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("ERRO ANTES:", err);
+    return res.status(500).json({ error: "Erro ao salvar ANTES" });
   }
 });
 
 // ===============================
-// TÉCNICO – ENVIAR / EDITAR DEPOIS
+// ENVIAR / EDITAR DEPOIS (ADMIN OU TÉCNICO DONO)
 // ===============================
 router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   try {
-    const project = await Project.findOne({
-      _id: req.params.id,
-      tecnico: req.userId
-    });
+    let project;
+
+    if (req.userRole === "admin") {
+      project = await Project.findById(req.params.id);
+    } else {
+      project = await Project.findOne({
+        _id: req.params.id,
+        tecnico: req.userId
+      });
+    }
 
     if (!project) {
       return res.status(404).json({ error: "Projeto não encontrado" });
@@ -149,10 +170,11 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 
     await project.save();
 
-    return res.status(200).json(project);
+    return res.json(project);
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("ERRO DEPOIS:", err);
+    return res.status(500).json({ error: "Erro ao salvar DEPOIS" });
   }
 });
 
@@ -160,11 +182,11 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 // ADMIN – TODOS OS SERVIÇOS
 // ===============================
 router.get("/admin/all", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Acesso negado" });
-  }
-
   try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
     const projects = await Project.find()
       .populate("tecnico", "nome email")
       .sort({ createdAt: -1 });
@@ -172,12 +194,13 @@ router.get("/admin/all", auth, async (req, res) => {
     return res.json(projects);
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("ERRO ADMIN ALL:", err);
+    return res.status(500).json({ error: "Erro ao buscar serviços" });
   }
 });
 
 // ===============================
-// ADMIN – GERAR PDF (SÓ ADMIN)
+// ADMIN – GERAR PDF
 // ===============================
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
