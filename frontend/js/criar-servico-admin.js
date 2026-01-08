@@ -1,68 +1,36 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
-const inputCliente = document.getElementById("clienteBusca");
-const listaUnidades = document.getElementById("listaUnidades");
+document.addEventListener("DOMContentLoaded", () => {
 
-inputCliente.addEventListener("input", buscarUnidades);
+  const inputCliente = document.getElementById("cliente");
+  const listaUnidades = document.getElementById("listaUnidades");
+  const boxTimao = document.getElementById("boxTimao");
 
-// ===============================
-// AUTOCOMPLETE TIMAO
-// ===============================
-async function buscarUnidades() {
-  const nome = inputCliente.value.trim();
-
-  if (nome.length < 2) {
-    listaUnidades.innerHTML = "";
+  if (!inputCliente) {
+    console.error("❌ input cliente não encontrado no HTML");
     return;
   }
 
-  try {
-    const res = await fetch(`${API}/clientes/buscar?nome=${encodeURIComponent(nome)}`);
-    const unidades = await res.json();
+  inputCliente.addEventListener("input", buscarUnidades);
 
-    listaUnidades.innerHTML = "";
+  carregarTecnicos();
 
-    if (unidades.length === 0) {
-      listaUnidades.innerHTML = `<li>Nenhuma unidade encontrada</li>`;
-      return;
-    }
-
-    unidades.forEach(u => {
-      const li = document.createElement("li");
-      li.innerText = `${u.nome} - ${u.marca}`;
-      li.onclick = () => selecionarUnidade(u);
-      listaUnidades.appendChild(li);
-    });
-
-  } catch (err) {
-    console.error("Erro buscarUnidades:", err);
-  }
-}
-
-function selecionarUnidade(unidade) {
-  document.getElementById("cliente").value = "timao";
-  document.getElementById("unidade").value = unidade.nome;
-  document.getElementById("marca").value = unidade.marca;
-  inputCliente.value = `${unidade.nome} - ${unidade.marca}`;
-  listaUnidades.innerHTML = "";
-}
+});
 
 // ===============================
 // CARREGAR TÉCNICOS
 // ===============================
-document.addEventListener("DOMContentLoaded", carregarTecnicos);
-
 async function carregarTecnicos() {
   try {
     const res = await fetch(`${API}/auth/tecnicos`, {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     const tecnicos = await res.json();
+
     const select = document.getElementById("tecnico");
+    select.innerHTML = `<option value="">Selecione o técnico</option>`;
 
     tecnicos.forEach(t => {
       const opt = document.createElement("option");
@@ -72,15 +40,56 @@ async function carregarTecnicos() {
     });
 
   } catch (err) {
-    console.error("Erro carregarTecnicos:", err);
+    console.error("Erro ao carregar técnicos:", err);
+    alert("Erro ao carregar técnicos");
   }
 }
 
 // ===============================
-// CRIAR SERVIÇO
+// BUSCAR UNIDADES (TIMÃO)
 // ===============================
-async function criarServico() {
-  const cliente = document.getElementById("cliente").value || inputCliente.value;
+async function buscarUnidades() {
+  const nome = document.getElementById("cliente").value.trim().toLowerCase();
+  const listaUnidades = document.getElementById("listaUnidades");
+  const boxTimao = document.getElementById("boxTimao");
+
+  if (nome !== "timao") {
+    listaUnidades.innerHTML = "";
+    boxTimao.style.display = "none";
+    return;
+  }
+
+  boxTimao.style.display = "block";
+
+  try {
+    const res = await fetch(`${API}/clientes/buscar?nome=${encodeURIComponent(nome)}`);
+    const unidades = await res.json();
+
+    listaUnidades.innerHTML = "";
+
+    unidades.forEach(u => {
+      const li = document.createElement("li");
+      li.innerText = `${u.nome} - ${u.marca}`;
+      li.onclick = () => selecionarUnidade(u);
+      listaUnidades.appendChild(li);
+    });
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function selecionarUnidade(unidade) {
+  document.getElementById("unidade").value = unidade.nome;
+  document.getElementById("marca").value = unidade.marca;
+  document.getElementById("listaUnidades").innerHTML = "";
+}
+
+// ===============================
+// CRIAR SERVIÇO ADMIN
+// ===============================
+async function criarServicoAdmin() {
+  const cliente = document.getElementById("cliente").value;
   const unidade = document.getElementById("unidade").value;
   const marca = document.getElementById("marca").value;
   const endereco = document.getElementById("endereco").value;
@@ -89,7 +98,7 @@ async function criarServico() {
   const msg = document.getElementById("msg");
 
   if (!cliente || !endereco || !tipoServico || !tecnicoId) {
-    msg.innerText = "Preencha todos os campos obrigatórios";
+    msg.innerText = "Preencha todos os campos";
     return;
   }
 
@@ -107,8 +116,8 @@ async function criarServico() {
       },
       body: JSON.stringify({
         cliente,
-        unidade: cliente.toLowerCase() === "timao" ? unidade : null,
-        marca: cliente.toLowerCase() === "timao" ? marca : null,
+        unidade,
+        marca,
         endereco,
         tipoServico,
         tecnicoId
@@ -123,6 +132,9 @@ async function criarServico() {
     }
 
     msg.innerText = "Serviço criado com sucesso!";
+    setTimeout(() => {
+      window.location.href = "admin.html";
+    }, 1000);
 
   } catch (err) {
     console.error(err);
