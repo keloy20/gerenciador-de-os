@@ -1,7 +1,7 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
-let tecnicosCache = []; // 🔥 AGORA DEFINIDO
+let tecnicosCache = []; 
 
 document.addEventListener("DOMContentLoaded", () => {
   const inputCliente = document.getElementById("cliente");
