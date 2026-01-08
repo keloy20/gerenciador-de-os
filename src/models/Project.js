@@ -37,7 +37,13 @@ const ProjectSchema = new mongoose.Schema({
     fotos: [String],
     relatorio: String,
     data: Date
-  }
+  },
+
+  osNumero: {
+  type: String,
+  unique: true
+},
+
 
 }, { timestamps: true });
 
