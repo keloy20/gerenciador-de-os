@@ -193,24 +193,19 @@ button:hover {
 .status-pendente {
   background: #f59e0b; /* laranja */
 }
-
 .status {
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: bold;
-  color: white;
 }
 
-.status.aguardando_tecnico {
-  background: #f59e0b; /* laranja */
+.status-aguardando {
+  color: #f59e0b;
 }
 
-.status.em_andamento {
-  background: #2563eb; /* azul */
+.status-andamento {
+  color: #2563eb;
 }
 
-.status.concluido {
-  background: #16a34a; /* verde */
+.status-concluido {
+  color: #16a34a;
 }
-
