@@ -61,3 +61,7 @@ function abrirServico(id) {
   localStorage.setItem("servicoId", id);
   window.location.href = "servico.html";
 }
+
+function novoServico() {
+  window.location.href = "novo-servico.html";
+}
