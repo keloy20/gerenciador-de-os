@@ -85,9 +85,6 @@ function selecionarUnidade(unidade) {
   document.getElementById("listaUnidades").innerHTML = "";
 }
 
-// ===============================
-// CRIAR SERVIÇO ADMIN
-// ===============================
 async function criarServicoAdmin() {
   const cliente = document.getElementById("cliente").value;
   const unidade = document.getElementById("unidade").value;
@@ -131,7 +128,24 @@ async function criarServicoAdmin() {
       return;
     }
 
-    msg.innerText = "Serviço criado com sucesso!";
+    // 🔥 WHATSAPP
+    const tecnico = tecnicosCache.find(t => t._id === tecnicoId);
+
+    if (tecnico && tecnico.telefone) {
+      const texto = `Novo serviço atribuído:
+
+Cliente: ${cliente}
+${cliente.toLowerCase() === "timao" ? `Unidade: ${unidade}\nMarca: ${marca}\n` : ""}
+Endereço: ${endereco}
+Serviço: ${tipoServico}
+
+Acesse o sistema para iniciar o atendimento.`;
+
+      const link = `https://wa.me/${tecnico.telefone}?text=${encodeURIComponent(texto)}`;
+      window.open(link, "_blank");
+    }
+
+    msg.innerText = "Serviço criado e WhatsApp enviado!";
     setTimeout(() => {
       window.location.href = "admin.html";
     }, 1000);
