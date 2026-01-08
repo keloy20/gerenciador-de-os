@@ -4,7 +4,7 @@ const role = localStorage.getItem("role");
 
 let todosServicos = [];
 
-if (!token| role !== "admin")  {
+if (!token || role !== "admin") {
   window.location.href = "login.html";
 }
 
@@ -68,11 +68,16 @@ function renderLista(servicos) {
     } else if (servico.status === "concluido") {
       statusLabel = "Concluído";
       statusClass = "status-concluido";
+    } else {
+      statusLabel = servico.status;
+      statusClass = "";
     }
 
     const tecnicoNome = servico.tecnico?.nome || "—";
+    const osNumero = servico.osNumero || "—";
 
     div.innerHTML = `
+      <strong>OS:</strong> ${osNumero}<br>
       <strong>Cliente:</strong> ${servico.cliente}<br>
       <strong>Técnico:</strong> ${tecnicoNome}<br>
       <strong>Status:</strong>
@@ -96,7 +101,9 @@ function filtrarServicos() {
   const filtrados = todosServicos.filter(s => {
     const cliente = s.cliente?.toLowerCase() || "";
     const tecnico = s.tecnico?.nome?.toLowerCase() || "";
-    return cliente.includes(termo) || tecnico.includes(termo);
+    const os = s.osNumero?.toLowerCase() || "";
+
+    return cliente.includes(termo) || tecnico.includes(termo) || os.includes(termo);
   });
 
   renderLista(filtrados);
