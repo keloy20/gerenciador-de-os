@@ -6,32 +6,45 @@ const listaUnidades = document.getElementById("listaUnidades");
 const campoUnidade = document.getElementById("unidade");
 const campoMarca = document.getElementById("marca");
 
+const boxUnidade = document.getElementById("boxUnidade");
+const boxMarca = document.getElementById("boxMarca");
+
 inputCliente.addEventListener("input", onClienteChange);
 
+// ===============================
+// QUANDO DIGITA CLIENTE
+// ===============================
 function onClienteChange() {
   const nome = inputCliente.value.trim().toLowerCase();
 
-  // 🔹 Se NÃO for timao → esconde unidade/marca e limpa
+  // 🔹 NÃO é timao → esconde tudo
   if (nome !== "timao") {
     listaUnidades.innerHTML = "";
+    listaUnidades.style.display = "none";
+
     campoUnidade.value = "";
     campoMarca.value = "";
 
-    campoUnidade.parentElement.style.display = "none";
-    campoMarca.parentElement.style.display = "none";
+    boxUnidade.style.display = "none";
+    boxMarca.style.display = "none";
     return;
   }
 
-  // 🔹 Se for timao → mostra campos e busca unidades
-  campoUnidade.parentElement.style.display = "block";
-  campoMarca.parentElement.style.display = "block";
+  // 🔹 É timao → mostra campos e busca unidades
+  boxUnidade.style.display = "block";
+  boxMarca.style.display = "block";
+  listaUnidades.style.display = "block";
 
   buscarUnidades(nome);
 }
 
+// ===============================
+// BUSCAR UNIDADES DO TIMAO
+// ===============================
 async function buscarUnidades(nome) {
   if (nome.length < 2) {
     listaUnidades.innerHTML = "";
+    listaUnidades.style.display = "none";
     return;
   }
 
@@ -41,8 +54,9 @@ async function buscarUnidades(nome) {
 
     listaUnidades.innerHTML = "";
 
-    if (unidades.length === 0) {
+    if (!Array.isArray(unidades) || unidades.length === 0) {
       listaUnidades.innerHTML = `<li>Nenhuma unidade encontrada</li>`;
+      listaUnidades.style.display = "block";
       return;
     }
 
@@ -53,15 +67,21 @@ async function buscarUnidades(nome) {
       listaUnidades.appendChild(li);
     });
 
+    listaUnidades.style.display = "block";
+
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao buscar unidades:", err);
   }
 }
 
+// ===============================
+// SELECIONAR UNIDADE
+// ===============================
 function selecionarUnidade(unidade) {
   campoUnidade.value = unidade.nome;
   campoMarca.value = unidade.marca;
   listaUnidades.innerHTML = "";
+  listaUnidades.style.display = "none";
 }
 
 // ===============================
@@ -75,12 +95,14 @@ async function criarServico() {
   const tipoServico = document.getElementById("tipoServico").value.trim();
   const msg = document.getElementById("msg");
 
+  msg.innerText = "";
+
   if (!cliente || !endereco || !tipoServico) {
     msg.innerText = "Preencha cliente, endereço e tipo de serviço";
     return;
   }
 
-  // 🔴 Se for TIMAO e não tiver unidade/marca → bloqueia
+  // 🔴 Se for TIMAO, exige unidade
   if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
     msg.innerText = "Selecione a unidade do Timão";
     return;
@@ -115,7 +137,7 @@ async function criarServico() {
     }, 1000);
 
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao criar serviço:", err);
     msg.innerText = "Erro de conexão com o servidor";
   }
 }
