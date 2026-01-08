@@ -1,11 +1,11 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
+let todosServicos = [];
+
 if (!token) {
   window.location.href = "login.html";
 }
-
-let todosServicos = [];
 
 document.addEventListener("DOMContentLoaded", carregarAdmin);
 
@@ -14,12 +14,12 @@ document.addEventListener("DOMContentLoaded", carregarAdmin);
 // ===============================
 async function carregarAdmin() {
   const lista = document.getElementById("listaAdmin");
-  lista.innerHTML = "Carregando serviços...";
+  lista.innerHTML = "Carregando...";
 
   try {
     const res = await fetch(`${API}/projects/admin/all`, {
       headers: {
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -31,7 +31,7 @@ async function carregarAdmin() {
     }
 
     todosServicos = data;
-    renderizarServicos(data);
+    renderLista(todosServicos);
 
   } catch (err) {
     console.error(err);
@@ -42,60 +42,68 @@ async function carregarAdmin() {
 // ===============================
 // RENDERIZAR LISTA
 // ===============================
-servicos.forEach(servico => {
-  const div = document.createElement("div");
-  div.classList.add("card");
+function renderLista(servicos) {
+  const lista = document.getElementById("listaAdmin");
+  lista.innerHTML = "";
 
-  let statusLabel = "";
-  let statusClass = "";
-
-  if (servico.status === "aguardando_tecnico") {
-    statusLabel = "Aguardando técnico";
-    statusClass = "status-aguardando";
-  } else if (servico.status === "em_andamento") {
-    statusLabel = "Em andamento";
-    statusClass = "status-andamento";
-  } else if (servico.status === "concluido") {
-    statusLabel = "Concluído";
-    statusClass = "status-concluido";
-  } else {
-    statusLabel = servico.status;
-    statusClass = "";
+  if (servicos.length === 0) {
+    lista.innerHTML = "Nenhum serviço encontrado.";
+    return;
   }
 
-  const tecnicoNome = servico.tecnico?.nome || "—";
+  servicos.forEach(servico => {
+    const div = document.createElement("div");
+    div.classList.add("card");
 
-  div.innerHTML = `
-    <strong>Cliente:</strong> ${servico.cliente}<br>
-    <strong>Técnico:</strong> ${tecnicoNome}<br>
-    <strong>Status:</strong> 
-    <span class="status ${statusClass}">● ${statusLabel}</span>
-    <br><br>
+    let statusLabel = "";
+    let statusClass = "";
 
-    <button onclick="abrirPDF('${servico._id}')">📄 PDF</button>
-    <hr>
-  `;
+    if (servico.status === "aguardando_tecnico") {
+      statusLabel = "Aguardando técnico";
+      statusClass = "status-aguardando";
+    } else if (servico.status === "em_andamento") {
+      statusLabel = "Em andamento";
+      statusClass = "status-andamento";
+    } else if (servico.status === "concluido") {
+      statusLabel = "Concluído";
+      statusClass = "status-concluido";
+    }
 
-  lista.appendChild(div);
-});
+    const tecnicoNome = servico.tecnico?.nome || "—";
 
+    div.innerHTML = `
+      <strong>Cliente:</strong> ${servico.cliente}<br>
+      <strong>Técnico:</strong> ${tecnicoNome}<br>
+      <strong>Status:</strong>
+      <span class="status ${statusClass}">● ${statusLabel}</span>
+      <br><br>
 
+      <button onclick="abrirPDF('${servico._id}')">📄 PDF</button>
+      <hr>
+    `;
+
+    lista.appendChild(div);
+  });
+}
+
+// ===============================
 // FILTRO
-
+// ===============================
 function filtrarServicos() {
-  const texto = document.getElementById("busca").value.toLowerCase();
+  const termo = document.getElementById("busca").value.toLowerCase();
 
   const filtrados = todosServicos.filter(s => {
     const cliente = s.cliente?.toLowerCase() || "";
     const tecnico = s.tecnico?.nome?.toLowerCase() || "";
-    return cliente.includes(texto) || tecnico.includes(texto);
+    return cliente.includes(termo) || tecnico.includes(termo);
   });
 
-  renderizarServicos(filtrados);
+  renderLista(filtrados);
 }
 
-// ABRIR PDF
-
+// ===============================
+// PDF
+// ===============================
 function abrirPDF(id) {
-  window.open(`${API}/projects/${id}/pdf?token=${token}`, "_blank");
+  window.open(`${API}/projects/${id}/pdf`, "_blank");
 }
