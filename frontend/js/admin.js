@@ -1,164 +1,83 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 
-const inputCliente = document.getElementById("clienteBusca");
-const listaUnidades = document.getElementById("listaUnidades");
+if (!token) {
+  alert("⚠️ Você não está logado. Faça login novamente.");
+  window.location.href = "login.html";
+}
 
+// ===============================
+// CARREGAR SERVIÇOS (ADMIN)
+// ===============================
 document.addEventListener("DOMContentLoaded", () => {
-  carregarTecnicos();
-  inputCliente.addEventListener("input", buscarUnidades);
+  carregarServicosAdmin();
 });
 
-let tecnicosCache = [];
-
-// ===============================
-// CARREGAR TÉCNICOS
-// ===============================
-async function carregarTecnicos() {
-  try {
-    const res = await fetch(`${API}/auth/tecnicos`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    const tecnicos = await res.json();
-    tecnicosCache = tecnicos;
-
-    const select = document.getElementById("tecnico");
-    select.innerHTML = `<option value="">Selecione o técnico</option>`;
-
-    tecnicos.forEach(t => {
-      const opt = document.createElement("option");
-      opt.value = t._id;
-      opt.innerText = t.nome;
-      select.appendChild(opt);
-    });
-
-  } catch (err) {
-    console.error("Erro ao carregar técnicos:", err);
-    alert("Erro ao carregar técnicos");
-  }
-}
-
-// ===============================
-// AUTOCOMPLETE TIMÃO
-// ===============================
-async function buscarUnidades() {
-  const nome = inputCliente.value.trim();
-
-  if (nome.length < 2) {
-    listaUnidades.innerHTML = "";
-    return;
-  }
+async function carregarServicosAdmin() {
+  const lista = document.getElementById("listaAdmin");
+  lista.innerHTML = "Carregando...";
 
   try {
-    const res = await fetch(`${API}/clientes/buscar?nome=${encodeURIComponent(nome)}`);
-    const unidades = await res.json();
-
-    listaUnidades.innerHTML = "";
-
-    if (unidades.length === 0) {
-      listaUnidades.innerHTML = `<li>Nenhuma unidade encontrada</li>`;
-      return;
-    }
-
-    unidades.forEach(u => {
-      const li = document.createElement("li");
-      li.innerText = `${u.nome} - ${u.marca}`;
-      li.onclick = () => selecionarUnidade(u);
-      listaUnidades.appendChild(li);
-    });
-
-  } catch (err) {
-    console.error("Erro buscarUnidades:", err);
-  }
-}
-
-function selecionarUnidade(unidade) {
-  document.getElementById("cliente").value = "timao";
-  document.getElementById("unidade").value = unidade.nome;
-  document.getElementById("marca").value = unidade.marca;
-  inputCliente.value = `${unidade.nome} - ${unidade.marca}`;
-  listaUnidades.innerHTML = "";
-}
-
-// ===============================
-// CRIAR SERVIÇO (ADMIN)
-// ===============================
-async function criarServico() {
-  const cliente = document.getElementById("cliente").value || inputCliente.value;
-  const unidade = document.getElementById("unidade").value;
-  const marca = document.getElementById("marca").value;
-  const endereco = document.getElementById("endereco").value;
-  const tipoServico = document.getElementById("tipoServico").value;
-  const tecnicoId = document.getElementById("tecnico").value;
-  const msg = document.getElementById("msg");
-
-  if (!cliente || !endereco || !tipoServico || !tecnicoId) {
-    msg.innerText = "Preencha todos os campos obrigatórios";
-    return;
-  }
-
-  // 🔴 REGRA: só exige unidade/marca se for TIMAO
-  if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
-    msg.innerText = "Selecione a unidade e marca do Timão";
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API}/projects/admin/create`, {
-      method: "POST",
+    const res = await fetch(`${API}/projects/admin/all`, {
       headers: {
-        "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        cliente,
-        unidade: cliente.toLowerCase() === "timao" ? unidade : null,
-        marca: cliente.toLowerCase() === "timao" ? marca : null,
-        endereco,
-        tipoServico,
-        tecnicoId
-      })
+      }
     });
-
-    const data = await res.json();
 
     if (!res.ok) {
-      msg.innerText = data.error || "Erro ao criar serviço";
+      const erro = await res.text();
+      console.error("ERRO ADMIN ALL:", erro);
+      lista.innerHTML = "Erro ao carregar serviços";
       return;
     }
 
-    // WHATSAPP
-    const tecnico = tecnicosCache.find(t => t._id === tecnicoId);
+    const servicos = await res.json();
+    lista.innerHTML = "";
 
-    if (tecnico && tecnico.telefone) {
-      const texto = `
-Novo serviço atribuído:
-
-Cliente: ${cliente}
-Endereço: ${endereco}
-Serviço: ${tipoServico}
-
-Acesse o sistema para iniciar o atendimento.
-`;
-      const link = `https://wa.me/${tecnico.telefone}?text=${encodeURIComponent(texto)}`;
-      window.open(link, "_blank");
+    if (servicos.length === 0) {
+      lista.innerHTML = "Nenhum serviço encontrado.";
+      return;
     }
 
-    msg.innerText = "Serviço criado e enviado ao técnico com sucesso!";
+    servicos.forEach(s => {
+      const div = document.createElement("div");
 
-    // limpar
-    inputCliente.value = "";
-    document.getElementById("cliente").value = "";
-    document.getElementById("unidade").value = "";
-    document.getElementById("marca").value = "";
-    document.getElementById("endereco").value = "";
-    document.getElementById("tipoServico").value = "";
-    document.getElementById("tecnico").value = "";
-    listaUnidades.innerHTML = "";
+      const statusCor = s.status === "concluido" ? "status-concluido" : "status-pendente";
+
+      div.className = "card";
+      div.innerHTML = `
+        <strong>${s.cliente}</strong><br>
+        Técnico: ${s.tecnico?.nome || "N/A"}<br>
+        <span class="badge ${statusCor}">${s.status}</span><br><br>
+        <button onclick="abrirServico('${s._id}')">Abrir</button>
+      `;
+
+      lista.appendChild(div);
+    });
 
   } catch (err) {
-    console.error("Erro ao criar serviço:", err);
-    msg.innerText = "Erro de conexão com o servidor";
+    console.error("ERRO carregarServicosAdmin:", err);
+    lista.innerHTML = "Erro de conexão com o servidor";
   }
+}
+
+// ===============================
+// ABRIR SERVIÇO
+// ===============================
+function abrirServico(id) {
+  localStorage.setItem("servicoId", id);
+  window.location.href = "servico.html";
+}
+
+// ===============================
+// FILTRO
+// ===============================
+function filtrarServicos() {
+  const termo = document.getElementById("busca").value.toLowerCase();
+  const cards = document.querySelectorAll("#listaAdmin .card");
+
+  cards.forEach(card => {
+    const texto = card.innerText.toLowerCase();
+    card.style.display = texto.includes(termo) ? "block" : "none";
+  });
 }
