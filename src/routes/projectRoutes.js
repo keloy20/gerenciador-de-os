@@ -80,16 +80,21 @@ router.post("/:id/abrir", auth, async (req, res) => {
   res.json(project);
 });
 
+
 // ===============================
-// TÉCNICO – MEUS SERVIÇOS (TODOS)
+// TÉCNICO – MEUS SERVIÇOS (NUNCA SOMEM)
 // ===============================
 router.get("/me", auth, async (req, res) => {
   try {
-    const projetos = await Project.find({ tecnico: req.userId }).sort({ createdAt: -1 });
-    res.json(projetos);
+    const projetos = await Project.find({
+      tecnico: req.userId
+    }).sort({ createdAt: -1 });
+
+    return res.json(projetos);
+
   } catch (err) {
     console.error("ERRO ME:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Erro ao buscar serviços" });
   }
 });
 

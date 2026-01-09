@@ -7,18 +7,16 @@ if (!token) {
 
 document.addEventListener("DOMContentLoaded", () => {
   carregarDashboard();
-  setInterval(carregarDashboard, 5000); // atualiza a cada 5 segundos
+  setInterval(carregarDashboard, 5000); // atualiza a cada 5s
 });
 
 async function carregarDashboard() {
   const lista = document.getElementById("listaServicos");
-  lista.innerHTML = "Carregando...";
 
   try {
     const res = await fetch(`${API}/projects/me`, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Cache-Control": "no-cache"
+        Authorization: `Bearer ${token}`
       }
     });
 
