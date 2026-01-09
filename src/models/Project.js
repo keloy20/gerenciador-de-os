@@ -44,6 +44,12 @@ const ProjectSchema = new mongoose.Schema({
   unique: true
 },
 
+subgrupo: {
+  type: String,
+  default: ""
+},
+
+
 
 }, { timestamps: true });
 

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Ver Chamado</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>Detalhes do Chamado</header>
+
+<div class="container">
+  <div class="card">
+    <p><strong>OS:</strong> <span id="osNumero"></span></p>
+    <p><strong>Cliente:</strong> <span id="cliente"></span></p>
+    <p><strong>Subgrupo:</strong> <span id="subgrupo"></span></p>
+    <p><strong>Unidade:</strong> <span id="unidade"></span></p>
+    <p><strong>Marca:</strong> <span id="marca"></span></p>
+    <p><strong>Endereço:</strong> <span id="endereco"></span></p>
+    <p><strong>Tipo Serviço:</strong> <span id="tipoServico"></span></p>
+    <p><strong>Status:</strong> <span id="status"></span></p>
+
+    <h4>Relatório Antes</h4>
+    <p id="antesRelatorio"></p>
+
+    <h4>Relatório Depois</h4>
+    <p id="depoisRelatorio"></p>
+  </div>
+</div>
+
+<button onclick="window.history.back()" class="btn-voltar">⬅ Voltar</button>
+
+<script src="js/ver-chamado-admin.js"></script>
+</body>
+</html>

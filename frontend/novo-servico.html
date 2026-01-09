@@ -4,86 +4,43 @@
   <meta charset="UTF-8">
   <title>Novo Serviço</title>
   <link rel="stylesheet" href="css/style.css">
-  <style>
-    .autocomplete-list {
-      list-style: none;
-      padding: 0;
-      margin: 5px 0 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      max-height: 150px;
-      overflow-y: auto;
-      background: #fff;
-    }
-
-    .autocomplete-list li {
-      padding: 8px 10px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    }
-
-    .autocomplete-list li:hover {
-      background: #f1f1f1;
-    }
-
-    .campo-unidade {
-      display: none; /* começa escondido */
-    }
-  </style>
 </head>
 <body>
 
 <header>Novo Serviço</header>
-
-<div class="menu">
-  <a href="dashboard.html">Dashboard</a>
-</div>
 
 <div class="container">
   <div class="card">
 
     <h3>Abrir Chamado</h3>
 
-    <!-- CLIENTE -->
     <label>Cliente</label>
-    <input 
-      type="text" 
-      id="cliente" 
-      placeholder="Ex: timao ou nome do cliente"
-      autocomplete="off"
-    >
+    <input type="text" id="cliente">
 
-    <!-- LISTA UNIDADES (autocomplete) -->
+    <label>Subgrupo</label>
+    <input type="text" id="subgrupo" placeholder="Ex: Brinks Recife">
+
     <ul id="listaUnidades" class="autocomplete-list"></ul>
 
-    <!-- UNIDADE -->
-    <div class="campo-unidade" id="boxUnidade">
+    <div id="boxTimao" style="display:none;">
       <label>Unidade</label>
       <input type="text" id="unidade" readonly>
-    </div>
 
-    <!-- MARCA -->
-    <div class="campo-unidade" id="boxMarca">
       <label>Marca</label>
       <input type="text" id="marca" readonly>
     </div>
 
-    <!-- ENDEREÇO -->
     <label>Endereço</label>
-    <input type="text" id="endereco" placeholder="Endereço do local">
+    <input type="text" id="endereco">
 
-    <!-- TIPO DE SERVIÇO -->
     <label>Tipo de Serviço</label>
-    <input type="text" id="tipoServico" placeholder="Ex: Manutenção, Instalação">
+    <input type="text" id="tipoServico">
 
     <button onclick="criarServico()">Criar Serviço</button>
-
     <p id="msg"></p>
 
   </div>
 </div>
-
-<button onclick="window.history.back()" class="btn-voltar">⬅ Voltar</button>
 
 <script src="js/novo-servico.js"></script>
 </body>

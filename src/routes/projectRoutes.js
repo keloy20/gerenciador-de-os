@@ -29,7 +29,7 @@ async function gerarNumeroOS() {
 // ===============================
 router.post("/start", auth, async (req, res) => {
   try {
-    const { cliente, unidade, marca, endereco, tipoServico } = req.body;
+    const { cliente, subgrupo,unidade, marca, endereco, tipoServico } = req.body;
 
     if (!cliente || !endereco || !tipoServico) {
       return res.status(400).json({ error: "Cliente, endereço e tipo de serviço são obrigatórios" });
@@ -44,12 +44,13 @@ router.post("/start", auth, async (req, res) => {
     const project = await Project.create({
       osNumero,
       cliente,
+      subgrupo,
       unidade: cliente.toLowerCase() === "timao" ? unidade : null,
       marca: cliente.toLowerCase() === "timao" ? marca : null,
       endereco,
       tipoServico,
       tecnico: req.userId,
-      status: "aguardando_tecnico", // ✅ CORRETO
+      status: "aguardando_tecnico",
       dataServico: new Date()
     });
 

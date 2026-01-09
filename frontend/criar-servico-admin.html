@@ -20,18 +20,17 @@
 
     <!-- CLIENTE -->
     <label>Cliente</label>
-    <input 
-      type="text" 
-      id="cliente" 
-      placeholder="Digite o nome do cliente (ex: Dasa)"
-      autocomplete="off"
-    >
+    <input type="text" id="cliente" placeholder="Ex: Brinks, Timão, Dasa">
 
-    <!-- AUTOCOMPLETE UNIDADES (SÓ PRA TIMÃO) -->
+    <!-- SUBGRUPO -->
+    <label>Subgrupo</label>
+    <input type="text" id="subgrupo" placeholder="Ex: Brinks Recife">
+
+    <!-- AUTOCOMPLETE TIMÃO -->
     <ul id="listaUnidades" class="autocomplete-list"></ul>
 
-    <!-- UNIDADE E MARCA (só aparecem se for TIMÃO) -->
-    <div id="boxTimao" style="display: none;">
+    <!-- UNIDADE / MARCA (só para Timão) -->
+    <div id="boxTimao" style="display:none;">
       <label>Unidade</label>
       <input type="text" id="unidade" readonly>
 
@@ -41,11 +40,11 @@
 
     <!-- ENDEREÇO -->
     <label>Endereço</label>
-    <input type="text" id="endereco" placeholder="Endereço do local">
+    <input type="text" id="endereco">
 
     <!-- TIPO SERVIÇO -->
     <label>Tipo de Serviço</label>
-    <input type="text" id="tipoServico" placeholder="Ex: Manutenção, Instalação">
+    <input type="text" id="tipoServico">
 
     <!-- TÉCNICO -->
     <label>Técnico</label>
@@ -53,9 +52,7 @@
       <option value="">Selecione o técnico</option>
     </select>
 
-    <button type="button" onclick="criarServicoAdmin()">Criar Serviço</button>
-
-
+    <button onclick="criarServicoAdmin()">Criar Serviço</button>
     <p id="msg"></p>
 
   </div>

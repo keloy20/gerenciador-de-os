@@ -5,20 +5,20 @@ if (!token) {
   window.location.href = "login.html";
 }
 
-let ultimoHash = "";
-
 document.addEventListener("DOMContentLoaded", () => {
   carregarDashboard();
-  setInterval(carregarDashboard, 10000); // 🔥 atualiza a cada 10 segundos
+  setInterval(carregarDashboard, 5000); // atualiza a cada 5 segundos
 });
 
 async function carregarDashboard() {
   const lista = document.getElementById("listaServicos");
+  lista.innerHTML = "Carregando...";
 
   try {
     const res = await fetch(`${API}/projects/me`, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache"
       }
     });
 
@@ -29,13 +29,9 @@ async function carregarDashboard() {
       return;
     }
 
-    const hashAtual = JSON.stringify(servicos);
-    if (hashAtual === ultimoHash) return; // não redesenha se não mudou
-    ultimoHash = hashAtual;
-
     lista.innerHTML = "";
 
-    if (servicos.length === 0) {
+    if (!Array.isArray(servicos) || servicos.length === 0) {
       lista.innerHTML = "Nenhum serviço atribuído.";
       return;
     }
