@@ -49,14 +49,14 @@ router.post("/start", auth, async (req, res) => {
       endereco,
       tipoServico,
       tecnico: req.userId,
-      status: "em_andamento",
+      status: "aguardando_tecnico", // ✅ CORRETO
       dataServico: new Date()
     });
 
     res.status(201).json(project);
 
   } catch (err) {
-    console.error(err);
+    console.error("ERRO START:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -82,22 +82,15 @@ router.post("/:id/abrir", auth, async (req, res) => {
 // ===============================
 // TÉCNICO – MEUS SERVIÇOS (TODOS)
 // ===============================
-// ===============================
-// TÉCNICO – MEUS SERVIÇOS (TODOS)
-// ===============================
 router.get("/me", auth, async (req, res) => {
   try {
-    const projetos = await Project.find({ tecnico: req.userId })
-      .sort({ createdAt: -1 });
-
+    const projetos = await Project.find({ tecnico: req.userId }).sort({ createdAt: -1 });
     res.json(projetos);
-
   } catch (err) {
     console.error("ERRO ME:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ===============================
 // TÉCNICO – BUSCAR SERVIÇO POR ID
