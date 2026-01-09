@@ -5,26 +5,45 @@ if (!token) {
   window.location.href = "login.html";
 }
 
-document.addEventListener("DOMContentLoaded", carregarDashboard);
+let ultimoHash = "";
+
+document.addEventListener("DOMContentLoaded", () => {
+  carregarDashboard();
+  setInterval(carregarDashboard, 10000); // 🔥 atualiza a cada 10 segundos
+});
 
 async function carregarDashboard() {
   const lista = document.getElementById("listaServicos");
-  lista.innerHTML = "Carregando...";
 
   try {
     const res = await fetch(`${API}/projects/me`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     });
 
     const servicos = await res.json();
+
+    if (!res.ok) {
+      lista.innerHTML = servicos.error || "Erro ao carregar serviços";
+      return;
+    }
+
+    const hashAtual = JSON.stringify(servicos);
+    if (hashAtual === ultimoHash) return; // não redesenha se não mudou
+    ultimoHash = hashAtual;
+
     lista.innerHTML = "";
 
-    if (!Array.isArray(servicos) || servicos.length === 0) {
-      lista.innerHTML = "Nenhum serviço encontrado.";
+    if (servicos.length === 0) {
+      lista.innerHTML = "Nenhum serviço atribuído.";
       return;
     }
 
     servicos.forEach(servico => {
+      const div = document.createElement("div");
+      div.classList.add("card");
+
       let statusLabel = "";
       let statusClass = "";
 
@@ -39,15 +58,13 @@ async function carregarDashboard() {
         statusClass = "status-concluido";
       }
 
-      const div = document.createElement("div");
-      div.classList.add("card");
-
       div.innerHTML = `
         <strong>OS:</strong> ${servico.osNumero || "-"}<br>
         <strong>Cliente:</strong> ${servico.cliente}<br>
-        <span class="status ${statusClass}">● ${statusLabel}</span><br><br>
-        <button onclick="abrirServico('${servico._id}')">Abrir Serviço</button>
-        <hr>
+        <strong>Status:</strong>
+        <span class="status ${statusClass}">● ${statusLabel}</span>
+        <br><br>
+        <button onclick="abrirServico('${servico._id}')">Abrir serviço</button>
       `;
 
       lista.appendChild(div);
@@ -62,8 +79,4 @@ async function carregarDashboard() {
 function abrirServico(id) {
   localStorage.setItem("servicoId", id);
   window.location.href = "servico.html";
-}
-
-function novoServico() {
-  window.location.href = "novo-servico.html";
 }
