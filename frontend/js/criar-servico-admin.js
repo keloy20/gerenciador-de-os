@@ -1,3 +1,57 @@
+const API = "https://gerenciador-de-os.onrender.com";
+const token = localStorage.getItem("token");
+
+let tecnicosCache = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+  carregarTecnicos();
+});
+
+// ===============================
+// CARREGAR TÉCNICOS
+// ===============================
+async function carregarTecnicos() {
+  const select = document.getElementById("tecnico");
+  select.innerHTML = `<option value="">Carregando técnicos...</option>`;
+
+  try {
+    const res = await fetch(`${API}/auth/tecnicos`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const tecnicos = await res.json();
+
+    console.log("TÉCNICOS RECEBIDOS:", tecnicos);
+
+    if (!res.ok) {
+      alert(tecnicos.error || "Erro ao carregar técnicos");
+      select.innerHTML = `<option value="">Erro ao carregar</option>`;
+      return;
+    }
+
+    tecnicosCache = tecnicos;
+
+    select.innerHTML = `<option value="">Selecione o técnico</option>`;
+
+    tecnicos.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t._id;
+      opt.innerText = `${t.nome} (${t.telefone || "sem telefone"})`;
+      select.appendChild(opt);
+    });
+
+  } catch (err) {
+    console.error("ERRO FETCH TÉCNICOS:", err);
+    alert("Erro de conexão ao carregar técnicos");
+    select.innerHTML = `<option value="">Erro de conexão</option>`;
+  }
+}
+
+// ===============================
+// CRIAR SERVIÇO (ADMIN)
+// ===============================
 async function criarServicoAdmin() {
   const cliente = document.getElementById("cliente").value;
   const subgrupo = document.getElementById("subgrupo").value;
@@ -38,45 +92,29 @@ async function criarServicoAdmin() {
       return;
     }
 
-    // ===============================
-    // 🔥 WHATSAPP
-    // ===============================
+    // ===== WHATSAPP =====
     const tecnico = tecnicosCache.find(t => t._id === tecnicoId);
 
-    console.log("TÉCNICO SELECIONADO:", tecnico); // 👈 DEBUG
+    if (tecnico && tecnico.telefone) {
+      const texto = `
+Novo serviço atribuído:
 
-    if (!tecnico) {
-      msg.innerText = "Técnico não encontrado";
-      return;
-    }
-
-    if (!tecnico.telefone) {
-      msg.innerText = "Técnico sem telefone cadastrado";
-      return;
-    }
-
-    const telefoneLimpo = tecnico.telefone.replace(/\D/g, "");
-
-    const texto = `
-Novo serviço atribuído
-
-OS: ${data.osNumero || "-"}
 Cliente: ${cliente}
-${subgrupo ? "Subgrupo: " + subgrupo : ""}
 Endereço: ${endereco}
 Serviço: ${tipoServico}
 
 Acesse o sistema para iniciar o atendimento.
 `;
 
-    const link = `https://wa.me/${telefoneLimpo}?text=${encodeURIComponent(texto)}`;
-    window.open(link, "_blank");
+      const link = `https://wa.me/${tecnico.telefone}?text=${encodeURIComponent(texto)}`;
+      window.open(link, "_blank");
+    }
 
-    msg.innerText = "Serviço criado e WhatsApp enviado!";
+    msg.innerText = "Serviço criado com sucesso!";
 
     setTimeout(() => {
       window.location.href = "admin.html";
-    }, 1000);
+    }, 800);
 
   } catch (err) {
     console.error(err);

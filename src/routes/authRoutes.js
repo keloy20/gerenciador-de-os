@@ -6,8 +6,9 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const auth = require("../middlewares/auth");
 
+// ===============================
 // LOGIN
-
+// ===============================
 router.post("/login", async (req, res) => {
   const { email, senha } = req.body;
 
@@ -46,8 +47,9 @@ router.post("/login", async (req, res) => {
 });
 
 
-// CADASTRAR TÉCNICO (SÓ ADMIN)
-
+// ===============================
+// CADASTRAR TÉCNICO (ADMIN)
+// ===============================
 router.post("/register-tecnico", auth, async (req, res) => {
   if (req.userRole !== "admin") {
     return res.status(403).json({ error: "Apenas admin pode cadastrar técnico" });
@@ -81,9 +83,9 @@ router.post("/register-tecnico", auth, async (req, res) => {
 });
 
 
-
-// LISTAR TÉCNICOS (SÓ ADMIN)
-
+// ===============================
+// LISTAR TÉCNICOS (ADMIN)
+// ===============================
 router.get("/tecnicos", auth, async (req, res) => {
   if (req.userRole !== "admin") {
     return res.status(403).json({ error: "Acesso negado" });
@@ -91,9 +93,10 @@ router.get("/tecnicos", auth, async (req, res) => {
 
   try {
     const tecnicos = await User.find({ role: "tecnico" })
-      .select("_id nome email telefone"); // TELEFONE AQUI
+      .select("_id nome email telefone");
 
     res.json(tecnicos);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao buscar técnicos" });
