@@ -1,53 +1,3 @@
-const API = "https://gerenciador-de-os.onrender.com";
-const token = localStorage.getItem("token");
-
-let tecnicosCache = [];
-
-document.addEventListener("DOMContentLoaded", () => {
-  carregarTecnicos();
-});
-
-// ===============================
-// CARREGAR TÉCNICOS
-// ===============================
-async function carregarTecnicos() {
-  const select = document.getElementById("tecnico");
-
-  try {
-    const res = await fetch(`${API}/auth/tecnicos`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    const tecnicos = await res.json();
-
-    if (!res.ok) {
-      console.error("Erro técnicos:", tecnicos);
-      alert(tecnicos.error || "Erro ao carregar técnicos");
-      return;
-    }
-
-    tecnicosCache = tecnicos;
-
-    select.innerHTML = `<option value="">Selecione o técnico</option>`;
-
-    tecnicos.forEach(t => {
-      const opt = document.createElement("option");
-      opt.value = t._id;
-      opt.innerText = t.nome;
-      select.appendChild(opt);
-    });
-
-  } catch (err) {
-    console.error("Erro ao carregar técnicos:", err);
-    alert("Erro de conexão ao carregar técnicos");
-  }
-}
-
-// ===============================
-// CRIAR SERVIÇO (ADMIN)
-// ===============================
 async function criarServicoAdmin() {
   const cliente = document.getElementById("cliente").value;
   const subgrupo = document.getElementById("subgrupo").value;
@@ -88,11 +38,45 @@ async function criarServicoAdmin() {
       return;
     }
 
-    msg.innerText = "Serviço criado com sucesso!";
+    // ===============================
+    // 🔥 WHATSAPP
+    // ===============================
+    const tecnico = tecnicosCache.find(t => t._id === tecnicoId);
+
+    console.log("TÉCNICO SELECIONADO:", tecnico); // 👈 DEBUG
+
+    if (!tecnico) {
+      msg.innerText = "Técnico não encontrado";
+      return;
+    }
+
+    if (!tecnico.telefone) {
+      msg.innerText = "Técnico sem telefone cadastrado";
+      return;
+    }
+
+    const telefoneLimpo = tecnico.telefone.replace(/\D/g, "");
+
+    const texto = `
+Novo serviço atribuído
+
+OS: ${data.osNumero || "-"}
+Cliente: ${cliente}
+${subgrupo ? "Subgrupo: " + subgrupo : ""}
+Endereço: ${endereco}
+Serviço: ${tipoServico}
+
+Acesse o sistema para iniciar o atendimento.
+`;
+
+    const link = `https://wa.me/${telefoneLimpo}?text=${encodeURIComponent(texto)}`;
+    window.open(link, "_blank");
+
+    msg.innerText = "Serviço criado e WhatsApp enviado!";
 
     setTimeout(() => {
       window.location.href = "admin.html";
-    }, 800);
+    }, 1000);
 
   } catch (err) {
     console.error(err);
