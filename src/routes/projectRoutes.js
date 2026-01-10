@@ -66,10 +66,15 @@ router.post("/start", auth, async (req, res) => {
 // TÉCNICO – AO ABRIR SERVIÇO (vira em_andamento)
 // ===============================
 router.post("/:id/abrir", auth, async (req, res) => {
-  const project = await Project.findOne({ _id: req.params.id, tecnico: req.userId });
+  const project = await Project.findById(req.params.id);
 
   if (!project) {
     return res.status(404).json({ error: "Serviço não encontrado" });
+  }
+
+  // 🔒 garante que só o técnico dono possa abrir
+  if (String(project.tecnico) !== String(req.userId)) {
+    return res.status(403).json({ error: "Você não tem permissão para este serviço" });
   }
 
   if (project.status === "aguardando_tecnico") {
@@ -79,7 +84,6 @@ router.post("/:id/abrir", auth, async (req, res) => {
 
   res.json(project);
 });
-
 
 // ===============================
 // TÉCNICO – MEUS SERVIÇOS (NUNCA SOMEM)
