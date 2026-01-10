@@ -3,12 +3,11 @@ const token = localStorage.getItem("token");
 
 let tecnicosCache = [];
 
-document.addEventListener("DOMContentLoaded", () => {
-if (!res.ok) {
-  msg.innerText = data.error || "Erro ao criar serviço";
-  return;
+if (!token) {
+  window.location.href = "login.html";
 }
 
+document.addEventListener("DOMContentLoaded", () => {
   carregarTecnicos();
 });
 
@@ -17,7 +16,6 @@ if (!res.ok) {
 // ===============================
 async function carregarTecnicos() {
   const select = document.getElementById("tecnico");
-  select.innerHTML = `<option value="">Carregando técnicos...</option>`;
 
   try {
     const res = await fetch(`${API}/auth/tecnicos`, {
@@ -26,31 +24,28 @@ async function carregarTecnicos() {
       }
     });
 
-    const data = await res.json();
-
-    console.log("TÉCNICOS:", data);
+    const tecnicos = await res.json();
 
     if (!res.ok) {
-      alert(data.error || "Erro ao carregar técnicos");
-      select.innerHTML = `<option value="">Erro ao carregar</option>`;
+      console.error("Erro técnicos:", tecnicos);
+      alert(tecnicos.error || "Erro ao carregar técnicos");
       return;
     }
 
-    tecnicosCache = data;
+    tecnicosCache = tecnicos;
 
     select.innerHTML = `<option value="">Selecione o técnico</option>`;
 
-    data.forEach(t => {
+    tecnicos.forEach(t => {
       const opt = document.createElement("option");
       opt.value = t._id;
-      opt.innerText = `${t.nome} - ${t.telefone || "sem telefone"}`;
+      opt.innerText = t.nome;
       select.appendChild(opt);
     });
 
   } catch (err) {
-    console.error("ERRO FETCH TECNICOS:", err);
+    console.error("Erro ao carregar técnicos:", err);
     alert("Erro de conexão ao carregar técnicos");
-    select.innerHTML = `<option value="">Erro de conexão</option>`;
   }
 }
 
@@ -97,6 +92,27 @@ async function criarServicoAdmin() {
       return;
     }
 
+    // ===============================
+    // WHATSAPP AUTOMÁTICO
+    // ===============================
+    const tecnico = tecnicosCache.find(t => t._id === tecnicoId);
+
+    if (tecnico && tecnico.telefone) {
+      const texto = `
+Novo serviço atribuído!
+
+OS: ${data.osNumero || "-"}
+Cliente: ${cliente}
+Endereço: ${endereco}
+Serviço: ${tipoServico}
+
+Acesse o sistema para iniciar.
+      `;
+
+      const link = `https://wa.me/${tecnico.telefone}?text=${encodeURIComponent(texto)}`;
+      window.open(link, "_blank");
+    }
+
     msg.innerText = "Serviço criado com sucesso!";
 
     setTimeout(() => {
@@ -104,7 +120,7 @@ async function criarServicoAdmin() {
     }, 800);
 
   } catch (err) {
-    console.error("ERRO CRIAR SERVIÇO:", err);
+    console.error("Erro ao criar serviço:", err);
     msg.innerText = "Erro de conexão com o servidor";
   }
 }
