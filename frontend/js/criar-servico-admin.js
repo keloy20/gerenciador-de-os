@@ -4,6 +4,12 @@ const token = localStorage.getItem("token");
 let tecnicosCache = [];
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (!token) {
+    alert("Token não encontrado. Faça login novamente.");
+    window.location.href = "login.html";
+    return;
+  }
+
   carregarTecnicos();
 });
 
@@ -21,29 +27,29 @@ async function carregarTecnicos() {
       }
     });
 
-    const tecnicos = await res.json();
+    const data = await res.json();
 
-    console.log("TÉCNICOS RECEBIDOS:", tecnicos);
+    console.log("TÉCNICOS:", data);
 
     if (!res.ok) {
-      alert(tecnicos.error || "Erro ao carregar técnicos");
+      alert(data.error || "Erro ao carregar técnicos");
       select.innerHTML = `<option value="">Erro ao carregar</option>`;
       return;
     }
 
-    tecnicosCache = tecnicos;
+    tecnicosCache = data;
 
     select.innerHTML = `<option value="">Selecione o técnico</option>`;
 
-    tecnicos.forEach(t => {
+    data.forEach(t => {
       const opt = document.createElement("option");
       opt.value = t._id;
-      opt.innerText = `${t.nome} (${t.telefone || "sem telefone"})`;
+      opt.innerText = `${t.nome} - ${t.telefone || "sem telefone"}`;
       select.appendChild(opt);
     });
 
   } catch (err) {
-    console.error("ERRO FETCH TÉCNICOS:", err);
+    console.error("ERRO FETCH TECNICOS:", err);
     alert("Erro de conexão ao carregar técnicos");
     select.innerHTML = `<option value="">Erro de conexão</option>`;
   }
@@ -92,24 +98,6 @@ async function criarServicoAdmin() {
       return;
     }
 
-    // ===== WHATSAPP =====
-    const tecnico = tecnicosCache.find(t => t._id === tecnicoId);
-
-    if (tecnico && tecnico.telefone) {
-      const texto = `
-Novo serviço atribuído:
-
-Cliente: ${cliente}
-Endereço: ${endereco}
-Serviço: ${tipoServico}
-
-Acesse o sistema para iniciar o atendimento.
-`;
-
-      const link = `https://wa.me/${tecnico.telefone}?text=${encodeURIComponent(texto)}`;
-      window.open(link, "_blank");
-    }
-
     msg.innerText = "Serviço criado com sucesso!";
 
     setTimeout(() => {
@@ -117,7 +105,7 @@ Acesse o sistema para iniciar o atendimento.
     }, 800);
 
   } catch (err) {
-    console.error(err);
+    console.error("ERRO CRIAR SERVIÇO:", err);
     msg.innerText = "Erro de conexão com o servidor";
   }
 }

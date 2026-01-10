@@ -7,7 +7,7 @@ if (!token) {
 
 document.addEventListener("DOMContentLoaded", () => {
   carregarDashboard();
-  setInterval(carregarDashboard, 5000); // atualiza a cada 5s
+  setInterval(carregarDashboard, 5000);
 });
 
 async function carregarDashboard() {
@@ -16,7 +16,8 @@ async function carregarDashboard() {
   try {
     const res = await fetch(`${API}/projects/me`, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache"
       }
     });
 
@@ -65,12 +66,18 @@ async function carregarDashboard() {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("ERRO DASHBOARD:", err);
     lista.innerHTML = "Erro de conexão com o servidor";
   }
 }
 
 function abrirServico(id) {
+  if (!id) {
+    alert("ID do serviço não encontrado");
+    return;
+  }
+
+  console.log("Abrindo serviço:", id);
   localStorage.setItem("servicoId", id);
   window.location.href = "servico.html";
 }
