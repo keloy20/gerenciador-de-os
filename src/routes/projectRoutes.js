@@ -272,6 +272,30 @@ router.post("/admin/create", auth, async (req, res) => {
 });
 
 // ===============================
+// ADMIN – VER CHAMADO (SEM PDF)
+// ===============================
+router.get("/admin/view/:id", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Acesso negado" });
+  }
+
+  try {
+    const project = await Project.findById(req.params.id)
+      .populate("tecnico", "nome email");
+
+    if (!project) {
+      return res.status(404).json({ error: "Serviço não encontrado" });
+    }
+
+    res.json(project);
+
+  } catch (err) {
+    console.error("ERRO VIEW:", err);
+    res.status(500).json({ error: "Erro ao buscar chamado" });
+  }
+});
+
+// ===============================
 // ADMIN – PDF
 // ===============================
 router.get("/:id/pdf", auth, async (req, res) => {

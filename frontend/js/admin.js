@@ -1,6 +1,5 @@
 const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
-const role = localStorage.getItem("role");
 
 let todosServicos = [];
 
@@ -10,16 +9,27 @@ if (!token) {
 
 document.addEventListener("DOMContentLoaded", carregarAdmin);
 
+// ===============================
+// CARREGAR SERVIÇOS (ADMIN)
+// ===============================
 async function carregarAdmin() {
   const lista = document.getElementById("listaAdmin");
   lista.innerHTML = "Carregando...";
 
   try {
     const res = await fetch(`${API}/projects/admin/all`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     });
 
     const data = await res.json();
+
+    if (!res.ok) {
+      lista.innerHTML = data.error || "Erro ao carregar serviços";
+      return;
+    }
+
     todosServicos = data;
     renderLista(todosServicos);
 
@@ -29,11 +39,22 @@ async function carregarAdmin() {
   }
 }
 
+// ===============================
+// RENDERIZAR LISTA
+// ===============================
 function renderLista(servicos) {
   const lista = document.getElementById("listaAdmin");
   lista.innerHTML = "";
 
+  if (servicos.length === 0) {
+    lista.innerHTML = "Nenhum serviço encontrado.";
+    return;
+  }
+
   servicos.forEach(servico => {
+    const div = document.createElement("div");
+    div.classList.add("card");
+
     let statusLabel = "";
     let statusClass = "";
 
@@ -50,14 +71,15 @@ function renderLista(servicos) {
 
     const tecnicoNome = servico.tecnico?.nome || "—";
 
-    const div = document.createElement("div");
-    div.classList.add("card");
-
     div.innerHTML = `
-      <strong>OS:</strong> ${servico.osNumero}<br>
+      <strong>OS:</strong> ${servico.osNumero || "-"}<br>
       <strong>Cliente:</strong> ${servico.cliente}<br>
       <strong>Técnico:</strong> ${tecnicoNome}<br>
-      <span class="status ${statusClass}">● ${statusLabel}</span><br><br>
+      <strong>Status:</strong>
+      <span class="status ${statusClass}">● ${statusLabel}</span>
+      <br><br>
+
+      <button onclick="verChamado('${servico._id}')">👁 Ver Chamado</button>
       <button onclick="abrirPDF('${servico._id}')">📄 PDF</button>
       <hr>
     `;
@@ -66,6 +88,9 @@ function renderLista(servicos) {
   });
 }
 
+// ===============================
+// FILTRO
+// ===============================
 function filtrarServicos() {
   const termo = document.getElementById("busca").value.toLowerCase();
 
@@ -80,6 +105,30 @@ function filtrarServicos() {
   renderLista(filtrados);
 }
 
+// ===============================
+// VER CHAMADO
+// ===============================
+function verChamado(id) {
+  localStorage.setItem("servicoIdAdmin", id);
+  window.location.href = "ver-chamado.html";
+}
+
+// ===============================
+// ABRIR PDF (COM TOKEN)
+// ===============================
 function abrirPDF(id) {
-  window.open(`${API}/projects/${id}/pdf`, "_blank");
+  fetch(`${API}/projects/${id}/pdf`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+  .then(res => res.blob())
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Erro ao abrir PDF");
+  });
 }
