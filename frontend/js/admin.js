@@ -71,18 +71,14 @@ function renderLista(servicos) {
 
     const tecnicoNome = servico.tecnico?.nome || "—";
 
-    div.innerHTML = `
-      <strong>OS:</strong> ${servico.osNumero || "-"}<br>
-      <strong>Cliente:</strong> ${servico.cliente}<br>
-      <strong>Técnico:</strong> ${tecnicoNome}<br>
-      <strong>Status:</strong>
-      <span class="status ${statusClass}">● ${statusLabel}</span>
-      <br><br>
+   div.innerHTML = `
+  <strong>OS:</strong> ${servico.osNumero || "-"}<br>
+  <strong>Cliente:</strong> ${servico.cliente}<br>
+  <strong>Status:</strong> ${servico.status}<br><br>
 
-      <button onclick="verChamado('${servico._id}')">👁 Ver Chamado</button>
-      <button onclick="abrirPDF('${servico._id}')">📄 PDF</button>
-      <hr>
-    `;
+  <button onclick="verChamado('${servico._id}')">👁 Ver chamado</button>
+  <button onclick="abrirPDF('${servico._id}')">⬇️ Baixar PDF</button>
+`;
 
     lista.appendChild(div);
   });
@@ -122,13 +118,24 @@ function abrirPDF(id) {
       Authorization: `Bearer ${token}`
     }
   })
-  .then(res => res.blob())
+  .then(res => {
+    if (!res.ok) throw new Error("Erro ao gerar PDF");
+    return res.blob();
+  })
   .then(blob => {
     const url = window.URL.createObjectURL(blob);
-    window.open(url, "_blank");
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "OS-" + id + ".pdf"; // nome do arquivo
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    window.URL.revokeObjectURL(url);
   })
   .catch(err => {
     console.error(err);
-    alert("Erro ao abrir PDF");
+    alert("Erro ao baixar PDF");
   });
 }
