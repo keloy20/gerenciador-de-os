@@ -1,18 +1,19 @@
 const API = "https://gerenciador-de-os.onrender.com";
-const token = localStorage.getItem("token");
 const servicoId = localStorage.getItem("servicoId");
+const token = localStorage.getItem("token");
 
 if (!token || !servicoId) {
-  alert("Sessão inválida. Volte ao dashboard.");
   window.location.href = "dashboard.html";
 }
 
+document.addEventListener("DOMContentLoaded", carregarServico);
+
 // ===============================
-// CARREGAR SERVIÇO
+// CARREGAR SERVIÇO + MARCAR EM ANDAMENTO
 // ===============================
 async function carregarServico() {
   try {
-    // 1. Marca como em andamento
+    // 🔥 AVISA O BACKEND QUE O TÉCNICO ABRIU O CHAMADO
     await fetch(`${API}/projects/${servicoId}/abrir`, {
       method: "POST",
       headers: {
@@ -20,7 +21,7 @@ async function carregarServico() {
       }
     });
 
-    // 2. Busca dados do serviço
+    // 🔥 BUSCA OS DADOS DO SERVIÇO
     const res = await fetch(`${API}/projects/${servicoId}`, {
       headers: {
         Authorization: `Bearer ${token}`
@@ -34,39 +35,31 @@ async function carregarServico() {
       return;
     }
 
-    console.log("SERVIÇO:", data);
-
-    document.getElementById("clienteNome").innerText = data.cliente || "-";
+    // ====== DADOS ======
+    document.getElementById("clienteNome").innerText = data.cliente;
     document.getElementById("osNumero").innerText = data.osNumero || "-";
+    document.getElementById("statusServico").innerText = data.status;
 
-    // ===== ANTES =====
+    // ====== ANTES ======
     const antesDiv = document.getElementById("fotosAntesPreview");
     antesDiv.innerHTML = "";
 
     if (data.antes?.fotos?.length) {
       data.antes.fotos.forEach(url => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.style.maxWidth = "100px";
-        img.style.marginRight = "5px";
-        antesDiv.appendChild(img);
+        antesDiv.innerHTML += `<img src="${url}" style="width:80px;margin:5px;">`;
       });
     }
 
     document.getElementById("relatorioAntes").value = data.antes?.relatorio || "";
     document.getElementById("observacaoAntes").value = data.antes?.observacao || "";
 
-    // ===== DEPOIS =====
+    // ====== DEPOIS ======
     const depoisDiv = document.getElementById("fotosDepoisPreview");
     depoisDiv.innerHTML = "";
 
     if (data.depois?.fotos?.length) {
       data.depois.fotos.forEach(url => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.style.maxWidth = "100px";
-        img.style.marginRight = "5px";
-        depoisDiv.appendChild(img);
+        depoisDiv.innerHTML += `<img src="${url}" style="width:80px;margin:5px;">`;
       });
     }
 
@@ -74,104 +67,89 @@ async function carregarServico() {
     document.getElementById("observacaoDepois").value = data.depois?.observacao || "";
 
   } catch (err) {
-    console.error("ERRO carregarServico:", err);
+    console.error(err);
     alert("Erro de conexão com servidor");
   }
 }
-
-document.addEventListener("DOMContentLoaded", carregarServico);
 
 // ===============================
 // SALVAR ANTES
 // ===============================
 async function salvarAntes() {
-  const fotosInput = document.getElementById("fotosAntes");
+  const fotos = document.getElementById("fotosAntes").files;
   const relatorio = document.getElementById("relatorioAntes").value;
   const observacao = document.getElementById("observacaoAntes").value;
 
-  if (!fotosInput || fotosInput.files.length === 0) {
-    alert("Selecione pelo menos uma foto (ANTES)");
+  if (fotos.length === 0) {
+    alert("Selecione pelo menos uma foto");
     return;
   }
 
   const formData = new FormData();
 
-  for (let i = 0; i < fotosInput.files.length; i++) {
-    formData.append("fotos", fotosInput.files[i]);
+  for (let i = 0; i < fotos.length; i++) {
+    formData.append("fotos", fotos[i]);
   }
 
   formData.append("relatorio", relatorio);
   formData.append("observacao", observacao);
 
-  try {
-    const res = await fetch(`${API}/projects/${servicoId}/antes`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
-    });
+  const res = await fetch(`${API}/projects/${servicoId}/antes`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.error || "Erro ao salvar ANTES");
-      return;
-    }
-
-    alert("ANTES salvo com sucesso!");
-    carregarServico(); // 🔥 RECARREGA NA TELA
-
-  } catch (err) {
-    console.error("ERRO salvarAntes:", err);
-    alert("Erro de conexão ao salvar ANTES");
+  if (!res.ok) {
+    alert(data.error || "Erro ao salvar antes");
+    return;
   }
+
+  alert("ANTES salvo com sucesso!");
+  carregarServico();
 }
 
 // ===============================
 // SALVAR DEPOIS (FINALIZA)
 // ===============================
 async function salvarDepois() {
-  const fotosInput = document.getElementById("fotosDepois");
+  const fotos = document.getElementById("fotosDepois").files;
   const relatorio = document.getElementById("relatorioDepois").value;
   const observacao = document.getElementById("observacaoDepois").value;
 
-  if (!fotosInput || fotosInput.files.length === 0) {
-    alert("Selecione pelo menos uma foto (DEPOIS)");
+  if (fotos.length === 0) {
+    alert("Selecione pelo menos uma foto");
     return;
   }
 
   const formData = new FormData();
 
-  for (let i = 0; i < fotosInput.files.length; i++) {
-    formData.append("fotos", fotosInput.files[i]);
+  for (let i = 0; i < fotos.length; i++) {
+    formData.append("fotos", fotos[i]);
   }
 
   formData.append("relatorio", relatorio);
   formData.append("observacao", observacao);
 
-  try {
-    const res = await fetch(`${API}/projects/${servicoId}/depois`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
-    });
+  const res = await fetch(`${API}/projects/${servicoId}/depois`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.error || "Erro ao salvar DEPOIS");
-      return;
-    }
-
-    alert("DEPOIS salvo com sucesso! Serviço finalizado.");
-    localStorage.removeItem("servicoId");
-    window.location.href = "dashboard.html";
-
-  } catch (err) {
-    console.error("ERRO salvarDepois:", err);
-    alert("Erro de conexão ao salvar DEPOIS");
+  if (!res.ok) {
+    alert(data.error || "Erro ao salvar depois");
+    return;
   }
+
+  alert("Serviço finalizado com sucesso!");
+  window.location.href = "dashboard.html";
 }
