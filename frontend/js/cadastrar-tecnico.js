@@ -10,6 +10,11 @@ function cadastrarTecnico() {
   const senha = document.getElementById("senha").value;
   const msg = document.getElementById("msg");
 
+  if (!token) {
+  window.location.href = "login.html";
+}
+
+
   if (!nome || !email || !telefone || !senha) {
     msg.innerText = "Preencha todos os campos";
     return;

@@ -7,7 +7,7 @@ if (!token) {
 
 document.addEventListener("DOMContentLoaded", () => {
   carregarDashboard();
-  setInterval(carregarDashboard, 5000);
+  setInterval(carregarDashboard, 5000); // 🔥 força atualizar a cada 5s
 });
 
 async function carregarDashboard() {
@@ -24,7 +24,8 @@ async function carregarDashboard() {
     const servicos = await res.json();
 
     if (!res.ok) {
-      lista.innerHTML = servicos.error || "Erro ao carregar serviços";
+      console.error("Erro API:", servicos);
+      lista.innerHTML = "Erro ao carregar serviços";
       return;
     }
 
@@ -66,18 +67,12 @@ async function carregarDashboard() {
     });
 
   } catch (err) {
-    console.error("ERRO DASHBOARD:", err);
-    lista.innerHTML = "Erro de conexão com o servidor";
+    console.error("Erro conexão:", err);
+    lista.innerHTML = "Erro de conexão com servidor";
   }
 }
 
 function abrirServico(id) {
-  if (!id) {
-    alert("ID do serviço não encontrado");
-    return;
-  }
-
-  console.log("Abrindo serviço:", id);
   localStorage.setItem("servicoId", id);
   window.location.href = "servico.html";
 }

@@ -4,11 +4,10 @@ const token = localStorage.getItem("token");
 let tecnicosCache = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-  if (!token) {
-    alert("Token não encontrado. Faça login novamente.");
-    window.location.href = "login.html";
-    return;
-  }
+if (!res.ok) {
+  msg.innerText = data.error || "Erro ao criar serviço";
+  return;
+}
 
   carregarTecnicos();
 });

@@ -2,6 +2,11 @@ const API = "https://gerenciador-de-os.onrender.com";
 const token = localStorage.getItem("token");
 const id = localStorage.getItem("servicoIdAdmin");
 
+if (!token) {
+  window.location.href = "login.html";
+}
+
+
 async function carregarChamado() {
   const res = await fetch(`${API}/projects/${id}`, {
     headers: {

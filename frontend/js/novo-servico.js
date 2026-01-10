@@ -4,6 +4,11 @@ const token = localStorage.getItem("token");
 const inputCliente = document.getElementById("cliente");
 const boxTimao = document.getElementById("boxTimao");
 
+if (!token) {
+  window.location.href = "login.html";
+}
+
+
 inputCliente.addEventListener("input", () => {
   const valor = inputCliente.value.toLowerCase();
 

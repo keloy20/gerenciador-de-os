@@ -4,7 +4,7 @@ const role = localStorage.getItem("role");
 
 let todosServicos = [];
 
-if (!token || role !== "admin") {
+if (!token) {
   window.location.href = "login.html";
 }
 

@@ -2,9 +2,11 @@ const API = "https://gerenciador-de-os.onrender.com";
 const servicoId = localStorage.getItem("servicoId");
 const token = localStorage.getItem("token");
 
-if (!token || !servicoId) {
-  window.location.href = "dashboard.html";
+if (!token) {
+  window.location.href = "login.html";
 }
+
+
 
 document.addEventListener("DOMContentLoaded", carregarServico);
 

@@ -4,6 +4,11 @@ async function login() {
   const senha = document.getElementById("senha").value;
   const msg = document.getElementById("msg");
 
+  if (!token) {
+  window.location.href = "login.html";
+}
+
+
   msg.innerText = "Entrando...";
 
   try {
