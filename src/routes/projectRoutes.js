@@ -262,4 +262,47 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
+// ===============================
+// TÉCNICO – ENVIAR DEPOIS (FINALIZA)
+// ===============================
+router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ error: "Serviço não encontrado" });
+    }
+
+    // só o técnico dono pode finalizar
+    if (String(project.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "Sem permissão" });
+    }
+
+    const urls = [];
+
+    for (let file of req.files) {
+      const result = await cloudinary.uploader.upload(file.path);
+      urls.push(result.secure_url);
+    }
+
+    project.depois = {
+      fotos: urls,
+      relatorio: req.body.relatorio || "",
+      observacao: req.body.observacao || "",
+      data: new Date()
+    };
+
+    project.status = "concluido";
+
+    await project.save();
+
+    return res.json(project);
+
+  } catch (err) {
+    console.error("ERRO DEPOIS:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
