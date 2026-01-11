@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", carregarAdmin);
 // ===============================
 async function carregarAdmin() {
   const lista = document.getElementById("listaAdmin");
-  lista.innerHTML = "Carregando...";
+  lista.innerHTML = `<tr><td colspan="8">Carregando...</td></tr>`;
 
   try {
     const res = await fetch(`${API}/projects/admin/all`, {
@@ -26,61 +26,83 @@ async function carregarAdmin() {
     const data = await res.json();
 
     if (!res.ok) {
-      lista.innerHTML = data.error || "Erro ao carregar serviços";
+      lista.innerHTML = `<tr><td colspan="8">${data.error || "Erro ao carregar serviços"}</td></tr>`;
       return;
     }
 
     todosServicos = data;
     renderLista(todosServicos);
+    atualizarCards(todosServicos);
 
   } catch (err) {
     console.error(err);
-    lista.innerHTML = "Erro de conexão com o servidor";
+    lista.innerHTML = `<tr><td colspan="8">Erro de conexão com o servidor</td></tr>`;
   }
 }
 
 // ===============================
-// RENDERIZAR LISTA
+// ATUALIZAR CARDS (TOPO)
+// ===============================
+function atualizarCards(servicos) {
+  const total = servicos.length;
+  const concluidos = servicos.filter(s => s.status === "concluido").length;
+  const andamento = servicos.filter(s => s.status === "em_andamento").length;
+  const aguardando = servicos.filter(s => s.status === "aguardando_tecnico").length;
+
+  document.getElementById("totalOS").innerText = total;
+  document.getElementById("totalConcluidos").innerText = concluidos;
+  document.getElementById("totalAndamento").innerText = andamento;
+  document.getElementById("totalAguardando").innerText = aguardando;
+}
+
+// ===============================
+// RENDERIZAR LISTA (TABELA)
 // ===============================
 function renderLista(servicos) {
   const lista = document.getElementById("listaAdmin");
   lista.innerHTML = "";
 
   if (servicos.length === 0) {
-    lista.innerHTML = "Nenhum serviço encontrado.";
+    lista.innerHTML = `<tr><td colspan="8">Nenhum serviço encontrado.</td></tr>`;
     return;
   }
 
   servicos.forEach(servico => {
-    const div = document.createElement("div");
-    div.classList.add("card");
 
     let statusLabel = "";
     let statusClass = "";
 
     if (servico.status === "aguardando_tecnico") {
-      statusLabel = "Aguardando técnico";
-      statusClass = "status-aguardando";
+      statusLabel = "Aguardando Técnico";
+      statusClass = "status aguardando_tecnico";
     } else if (servico.status === "em_andamento") {
-      statusLabel = "Em andamento";
-      statusClass = "status-andamento";
+      statusLabel = "Em Andamento";
+      statusClass = "status em_andamento";
     } else if (servico.status === "concluido") {
       statusLabel = "Concluído";
-      statusClass = "status-concluido";
+      statusClass = "status concluido";
     }
 
     const tecnicoNome = servico.tecnico?.nome || "—";
+    const dataFormatada = new Date(servico.dataServico).toLocaleDateString("pt-BR");
 
-   div.innerHTML = `
-  <strong>OS:</strong> ${servico.osNumero || "-"}<br>
-  <strong>Cliente:</strong> ${servico.cliente}<br>
-  <strong>Status:</strong> ${servico.status}<br><br>
+    const tr = document.createElement("tr");
 
-  <button onclick="verChamado('${servico._id}')">👁 Ver chamado</button>
-  <button onclick="abrirPDF('${servico._id}')">⬇️ Baixar PDF</button>
-`;
+    tr.innerHTML = `
+      <td>${servico.osNumero || "-"}</td>
+      <td>${servico.cliente || "-"}</td>
+      <td>${servico.subgrupo || "-"}</td>
+      <td>${servico.tipoServico || "-"}</td>
+      <td>${tecnicoNome}</td>
+      <td><span class="${statusClass}">${statusLabel}</span></td>
+      <td>${dataFormatada}</td>
+      <td>
+        <button onclick="verChamado('${servico._id}')">👁</button>
+        <button onclick="abrirPDF('${servico._id}')">⬇️</button>
+      </td>
+    `;
 
-    lista.appendChild(div);
+    lista.appendChild(tr);
   });
 }
 
@@ -127,7 +149,7 @@ function abrirPDF(id) {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "OS-" + id + ".pdf"; // nome do arquivo
+    a.download = "OS-" + id + ".pdf";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -139,3 +161,11 @@ function abrirPDF(id) {
     alert("Erro ao baixar PDF");
   });
 }
+
+// ===============================
+// LOGOUT
+// ===============================
+document.getElementById("btnLogout")?.addEventListener("click", () => {
+  localStorage.clear();
+  window.location.href = "login.html";
+});

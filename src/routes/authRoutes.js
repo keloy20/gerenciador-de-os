@@ -46,7 +46,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
 // ===============================
 // CADASTRAR TÉCNICO (ADMIN)
 // ===============================
@@ -81,7 +80,6 @@ router.post("/register-tecnico", auth, async (req, res) => {
     res.status(500).json({ error: "Erro ao cadastrar técnico" });
   }
 });
-
 
 // ===============================
 // LISTAR TÉCNICOS (ADMIN)

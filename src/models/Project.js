@@ -15,12 +15,11 @@ const ProjectSchema = new mongoose.Schema({
     required: true
   },
 
- status: {
-  type: String,
-  enum: ["aguardando_tecnico", "em_andamento", "concluido"],
-  default: "aguardando_tecnico"
-},
-
+  status: {
+    type: String,
+    enum: ["aguardando_tecnico", "em_andamento", "concluido"],
+    default: "aguardando_tecnico"
+  },
 
   dataServico: {
     type: Date,
@@ -30,26 +29,26 @@ const ProjectSchema = new mongoose.Schema({
   antes: {
     fotos: [String],
     relatorio: String,
+    observacao: String,
     data: Date
   },
 
   depois: {
     fotos: [String],
     relatorio: String,
+    observacao: String,
     data: Date
   },
 
   osNumero: {
-  type: String,
-  unique: true
-},
+    type: String,
+    unique: true
+  },
 
-subgrupo: {
-  type: String,
-  default: ""
-},
-
-
+  subgrupo: {
+    type: String,
+    default: ""
+  }
 
 }, { timestamps: true });
 
