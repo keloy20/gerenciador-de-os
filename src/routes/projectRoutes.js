@@ -194,6 +194,47 @@ router.post("/:id/abrir", auth, async (req, res) => {
   }
 });
 
+// ===============================
+// TÉCNICO – ENVIAR ANTES
+// ===============================
+router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ error: "Serviço não encontrado" });
+    }
+
+    // só o técnico dono pode enviar
+    if (String(project.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "Sem permissão" });
+    }
+
+    const urls = [];
+
+    for (let file of req.files) {
+      const result = await cloudinary.uploader.upload(file.path);
+      urls.push(result.secure_url);
+    }
+
+    project.antes = {
+      fotos: urls,
+      relatorio: req.body.relatorio || "",
+      observacao: req.body.observacao || "",
+      data: new Date()
+    };
+
+    await project.save();
+
+    return res.json(project);
+
+  } catch (err) {
+    console.error("ERRO ANTES:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 // ===============================
 // BUSCAR SERVIÇO POR ID (POR ÚLTIMO)
