@@ -166,6 +166,36 @@ router.get("/me", auth, async (req, res) => {
 });
 
 // ===============================
+// TÉCNICO – ABRIR SERVIÇO
+// ===============================
+router.post("/:id/abrir", auth, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ error: "Serviço não encontrado" });
+    }
+
+    // só o técnico dono pode abrir
+    if (String(project.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "Você não tem permissão para este serviço" });
+    }
+
+    if (project.status === "aguardando_tecnico") {
+      project.status = "em_andamento";
+      await project.save();
+    }
+
+    return res.json(project);
+
+  } catch (err) {
+    console.error("ERRO ABRIR:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ===============================
 // BUSCAR SERVIÇO POR ID (POR ÚLTIMO)
 // ===============================
 router.get("/:id", auth, async (req, res) => {
