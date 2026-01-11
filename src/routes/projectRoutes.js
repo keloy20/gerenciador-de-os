@@ -304,5 +304,70 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   }
 });
 
+// ===============================
+// GERAR PDF DA OS
+// ===============================
+router.get("/:id/pdf", auth, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id)
+      .populate("tecnico", "nome email");
+
+    if (!project) {
+      return res.status(404).json({ error: "Serviço não encontrado" });
+    }
+
+    // segurança: admin vê tudo, técnico só o dele
+    if (
+      req.userRole !== "admin" &&
+      String(project.tecnico?._id) !== String(req.userId)
+    ) {
+      return res.status(403).json({ error: "Acesso negado ao PDF" });
+    }
+
+    const doc = new PDFDocument({ margin: 40 });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=OS-${project.osNumero}.pdf`
+    );
+
+    doc.pipe(res);
+
+    doc.fontSize(18).text(`ORDEM DE SERVIÇO - ${project.osNumero}`, { align: "center" });
+    doc.moveDown();
+
+    doc.fontSize(12).text(`Cliente: ${project.cliente}`);
+    doc.text(`Subgrupo: ${project.subgrupo || "-"}`);
+    doc.text(`Unidade: ${project.unidade || "-"}`);
+    doc.text(`Marca: ${project.marca || "-"}`);
+    doc.text(`Endereço: ${project.endereco}`);
+    doc.text(`Tipo de Serviço: ${project.tipoServico}`);
+    doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
+    doc.text(`Status: ${project.status}`);
+    doc.moveDown();
+
+    // ===== ANTES =====
+    doc.fontSize(14).text("ANTES DO SERVIÇO", { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(11).text(`Relatório: ${project.antes?.relatorio || "-"}`);
+    doc.text(`Observação: ${project.antes?.observacao || "-"}`);
+    doc.moveDown();
+
+    // ===== DEPOIS =====
+    doc.fontSize(14).text("DEPOIS DO SERVIÇO", { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(11).text(`Relatório: ${project.depois?.relatorio || "-"}`);
+    doc.text(`Observação: ${project.depois?.observacao || "-"}`);
+    doc.moveDown();
+
+    doc.end();
+
+  } catch (err) {
+    console.error("ERRO PDF:", err);
+    res.status(500).json({ error: "Erro ao gerar PDF" });
+  }
+});
+
+
 
 module.exports = router;
