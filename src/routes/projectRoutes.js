@@ -305,7 +305,7 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 });
 
 // ===============================
-// GERAR PDF DO SERVIÇO (2 PÁGINAS - PROFISSIONAL)
+// GERAR PDF DO SERVIÇO (2 PÁGINAS - 4 FOTOS ANTES / 4 FOTOS DEPOIS)
 // ===============================
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
@@ -368,7 +368,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.text(`Status: ${project.status}`);
     doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
 
-    doc.moveDown(1.2);
+    doc.moveDown(1);
 
     // ===== ANTES =====
     doc.fontSize(14).fillColor("#1f2933").text("ANTES", { underline: true });
@@ -379,12 +379,13 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.text(`Observação: ${project.antes?.observacao || "-"}`);
     doc.moveDown(0.5);
 
-    // FOTOS ANTES (NO MÁXIMO 2)
+    // ===== FOTOS ANTES (4 EM GRADE) =====
     if (project.antes?.fotos?.length > 0) {
-      const fotosAntes = project.antes.fotos.slice(0, 2);
+      const fotosAntes = project.antes.fotos.slice(0, 4);
 
       let x = 40;
       let y = doc.y;
+      let count = 0;
 
       for (let i = 0; i < fotosAntes.length; i++) {
         try {
@@ -396,11 +397,17 @@ router.get("/:id/pdf", auth, async (req, res) => {
           const imageBuffer = Buffer.from(response.data);
 
           doc.image(imageBuffer, x, y, {
-            fit: [250, 200],
-            align: "center"
+            fit: [230, 160]
           });
 
-          x += 270; // lado a lado
+          x += 250;
+          count++;
+
+          if (count === 2) {
+            x = 40;
+            y += 180;
+            count = 0;
+          }
         } catch (err) {
           console.error("ERRO FOTO ANTES:", err.message);
         }
@@ -420,12 +427,13 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.text(`Observação: ${project.depois?.observacao || "-"}`);
     doc.moveDown(0.5);
 
-    // FOTOS DEPOIS (NO MÁXIMO 2)
+    // ===== FOTOS DEPOIS (4 EM GRADE) =====
     if (project.depois?.fotos?.length > 0) {
-      const fotosDepois = project.depois.fotos.slice(0, 2);
+      const fotosDepois = project.depois.fotos.slice(0, 4);
 
       let x = 40;
       let y = doc.y;
+      let count = 0;
 
       for (let i = 0; i < fotosDepois.length; i++) {
         try {
@@ -437,11 +445,17 @@ router.get("/:id/pdf", auth, async (req, res) => {
           const imageBuffer = Buffer.from(response.data);
 
           doc.image(imageBuffer, x, y, {
-            fit: [250, 200],
-            align: "center"
+            fit: [230, 160]
           });
 
-          x += 270;
+          x += 250;
+          count++;
+
+          if (count === 2) {
+            x = 40;
+            y += 180;
+            count = 0;
+          }
         } catch (err) {
           console.error("ERRO FOTO DEPOIS:", err.message);
         }
