@@ -305,7 +305,7 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 });
 
 // ===============================
-// GERAR PDF DA OS
+// GERAR PDF DO SERVIÇO (COM FOTOS)
 // ===============================
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
@@ -316,15 +316,15 @@ router.get("/:id/pdf", auth, async (req, res) => {
       return res.status(404).json({ error: "Serviço não encontrado" });
     }
 
-    // segurança: admin vê tudo, técnico só o dele
     if (
       req.userRole !== "admin" &&
       String(project.tecnico?._id) !== String(req.userId)
     ) {
-      return res.status(403).json({ error: "Acesso negado ao PDF" });
+      return res.status(403).json({ error: "Acesso negado" });
     }
 
-    const doc = new PDFDocument({ margin: 40 });
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -333,37 +333,161 @@ router.get("/:id/pdf", auth, async (req, res) => {
 
     doc.pipe(res);
 
-    doc.fontSize(18).text(`ORDEM DE SERVIÇO - ${project.osNumero}`, { align: "center" });
-    doc.moveDown();
+    // ===============================
+    // CABEÇALHO
+    // ===============================
+    doc
+      .fontSize(20)
+      .fillColor("#111827")
+      .text("ORDEM DE SERVIÇO", { align: "center" });
 
-    doc.fontSize(12).text(`Cliente: ${project.cliente}`);
-    doc.text(`Subgrupo: ${project.subgrupo || "-"}`);
-    doc.text(`Unidade: ${project.unidade || "-"}`);
-    doc.text(`Marca: ${project.marca || "-"}`);
+    doc.moveDown(0.5);
+
+    doc
+      .fontSize(10)
+      .fillColor("#374151")
+      .text(`OS: ${project.osNumero}`, { align: "center" });
+
+    doc.moveDown(1);
+
+    doc
+      .moveTo(40, doc.y)
+      .lineTo(550, doc.y)
+      .strokeColor("#e5e7eb")
+      .stroke();
+
+    doc.moveDown(1);
+
+    // ===============================
+    // DADOS
+    // ===============================
+    doc.fontSize(12).fillColor("#000");
+
+    doc.text(`Cliente: ${project.cliente}`);
+    if (project.unidade) doc.text(`Unidade: ${project.unidade}`);
+    if (project.marca) doc.text(`Marca: ${project.marca}`);
     doc.text(`Endereço: ${project.endereco}`);
     doc.text(`Tipo de Serviço: ${project.tipoServico}`);
-    doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
     doc.text(`Status: ${project.status}`);
-    doc.moveDown();
+    doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
 
-    // ===== ANTES =====
-    doc.fontSize(14).text("ANTES DO SERVIÇO", { underline: true });
+    doc.moveDown(1.5);
+
+    // ===============================
+    // ANTES
+    // ===============================
+    doc.fontSize(14).fillColor("#1f2933").text("ANTES", { underline: true });
     doc.moveDown(0.5);
-    doc.fontSize(11).text(`Relatório: ${project.antes?.relatorio || "-"}`);
+
+    doc.fontSize(11).fillColor("#000");
+    doc.text(`Relatório: ${project.antes?.relatorio || "-"}`);
     doc.text(`Observação: ${project.antes?.observacao || "-"}`);
-    doc.moveDown();
+    doc.moveDown(1);
 
-    // ===== DEPOIS =====
-    doc.fontSize(14).text("DEPOIS DO SERVIÇO", { underline: true });
+    if (project.antes?.fotos?.length > 0) {
+      for (let i = 0; i < project.antes.fotos.length; i++) {
+        const imageUrl = project.antes.fotos[i];
+
+        try {
+          const response = await axios.get(imageUrl, {
+            responseType: "arraybuffer",
+            timeout: 15000
+          });
+
+          const imageBuffer = Buffer.from(response.data);
+
+          doc.addPage();
+          doc.fontSize(12).text(`ANTES - Foto ${i + 1}`, { align: "center" });
+          doc.moveDown(0.5);
+
+          doc.image(imageBuffer, {
+            fit: [450, 650],
+            align: "center",
+            valign: "center"
+          });
+
+        } catch (imgErr) {
+          console.error("ERRO AO CARREGAR FOTO ANTES:", imageUrl, imgErr.message);
+
+          doc.addPage();
+          doc
+            .fontSize(12)
+            .fillColor("red")
+            .text(`Erro ao carregar imagem: ${imageUrl}`, { align: "center" });
+        }
+      }
+    }
+
+    // ===============================
+    // DEPOIS
+    // ===============================
+    doc.addPage();
+
+    doc.fontSize(14).fillColor("#1f2933").text("DEPOIS", { underline: true });
     doc.moveDown(0.5);
-    doc.fontSize(11).text(`Relatório: ${project.depois?.relatorio || "-"}`);
+
+    doc.fontSize(11).fillColor("#000");
+    doc.text(`Relatório: ${project.depois?.relatorio || "-"}`);
     doc.text(`Observação: ${project.depois?.observacao || "-"}`);
-    doc.moveDown();
+    doc.moveDown(1);
+
+    if (project.depois?.fotos?.length > 0) {
+      for (let i = 0; i < project.depois.fotos.length; i++) {
+        const imageUrl = project.depois.fotos[i];
+
+        try {
+          const response = await axios.get(imageUrl, {
+            responseType: "arraybuffer",
+            timeout: 15000
+          });
+
+          const imageBuffer = Buffer.from(response.data);
+
+          doc.addPage();
+          doc.fontSize(12).text(`DEPOIS - Foto ${i + 1}`, { align: "center" });
+          doc.moveDown(0.5);
+
+          doc.image(imageBuffer, {
+            fit: [450, 650],
+            align: "center",
+            valign: "center"
+          });
+
+        } catch (imgErr) {
+          console.error("ERRO AO CARREGAR FOTO DEPOIS:", imageUrl, imgErr.message);
+
+          doc.addPage();
+          doc
+            .fontSize(12)
+            .fillColor("red")
+            .text(`Erro ao carregar imagem: ${imageUrl}`, { align: "center" });
+        }
+      }
+    }
+
+    // ===============================
+    // RODAPÉ
+    // ===============================
+    doc.addPage();
+
+    doc
+      .fontSize(10)
+      .fillColor("#6b7280")
+      .text("Relatório gerado automaticamente pelo Sistema de OS", {
+        align: "center"
+      });
+
+    doc.moveDown(0.5);
+
+    doc.text(
+      `Data: ${new Date().toLocaleDateString("pt-BR")} - ${new Date().toLocaleTimeString("pt-BR")}`,
+      { align: "center" }
+    );
 
     doc.end();
 
   } catch (err) {
-    console.error("ERRO PDF:", err);
+    console.error("ERRO GERAL PDF:", err);
     res.status(500).json({ error: "Erro ao gerar PDF" });
   }
 });
