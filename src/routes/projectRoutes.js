@@ -379,7 +379,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.text(`Observação: ${project.antes?.observacao || "-"}`);
     doc.moveDown(0.5);
 
-    // ===== FOTOS ANTES (4 EM GRADE) =====
+    // ===== FOTOS ANTES (4 EM GRADE 2x2) =====
     if (project.antes?.fotos?.length > 0) {
       const fotosAntes = project.antes.fotos.slice(0, 4);
 
@@ -397,7 +397,10 @@ router.get("/:id/pdf", auth, async (req, res) => {
           const imageBuffer = Buffer.from(response.data);
 
           doc.image(imageBuffer, x, y, {
-            fit: [230, 160]
+            width: 230,
+            height: 160,
+            align: "center",
+            valign: "center"
           });
 
           x += 250;
@@ -427,7 +430,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.text(`Observação: ${project.depois?.observacao || "-"}`);
     doc.moveDown(0.5);
 
-    // ===== FOTOS DEPOIS (4 EM GRADE) =====
+    // ===== FOTOS DEPOIS (4 EM GRADE 2x2) =====
     if (project.depois?.fotos?.length > 0) {
       const fotosDepois = project.depois.fotos.slice(0, 4);
 
@@ -445,7 +448,10 @@ router.get("/:id/pdf", auth, async (req, res) => {
           const imageBuffer = Buffer.from(response.data);
 
           doc.image(imageBuffer, x, y, {
-            fit: [230, 160]
+            width: 230,
+            height: 160,
+            align: "center",
+            valign: "center"
           });
 
           x += 250;
@@ -463,9 +469,9 @@ router.get("/:id/pdf", auth, async (req, res) => {
     }
 
     // ===============================
-    // RODAPÉ
+    // RODAPÉ FIXO (NUNCA CRIA 3ª PÁGINA)
     // ===============================
-    doc.moveDown(3);
+    doc.y = 700;
 
     doc
       .fontSize(10)
@@ -488,7 +494,6 @@ router.get("/:id/pdf", auth, async (req, res) => {
     res.status(500).json({ error: "Erro ao gerar PDF" });
   }
 });
-
 
 
 module.exports = router;
