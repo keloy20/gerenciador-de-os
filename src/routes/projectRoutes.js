@@ -305,7 +305,7 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 });
 
 // ===============================
-// GERAR PDF DO SERVIÇO (COM FOTOS)
+// GERAR PDF DO SERVIÇO (2 PÁGINAS - PROFISSIONAL)
 // ===============================
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
@@ -334,7 +334,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.pipe(res);
 
     // ===============================
-    // CABEÇALHO
+    // PÁGINA 1 - CABEÇALHO + DADOS + ANTES
     // ===============================
     doc
       .fontSize(20)
@@ -358,9 +358,6 @@ router.get("/:id/pdf", auth, async (req, res) => {
 
     doc.moveDown(1);
 
-    // ===============================
-    // DADOS
-    // ===============================
     doc.fontSize(12).fillColor("#000");
 
     doc.text(`Cliente: ${project.cliente}`);
@@ -371,96 +368,82 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.text(`Status: ${project.status}`);
     doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
 
-    doc.moveDown(1.5);
+    doc.moveDown(1.2);
 
-    // ===============================
-    // ANTES
-    // ===============================
+    // ===== ANTES =====
     doc.fontSize(14).fillColor("#1f2933").text("ANTES", { underline: true });
-    doc.moveDown(0.5);
+    doc.moveDown(0.3);
 
     doc.fontSize(11).fillColor("#000");
     doc.text(`Relatório: ${project.antes?.relatorio || "-"}`);
     doc.text(`Observação: ${project.antes?.observacao || "-"}`);
-    doc.moveDown(1);
+    doc.moveDown(0.5);
 
+    // FOTOS ANTES (NO MÁXIMO 2)
     if (project.antes?.fotos?.length > 0) {
-      for (let i = 0; i < project.antes.fotos.length; i++) {
-        const imageUrl = project.antes.fotos[i];
+      const fotosAntes = project.antes.fotos.slice(0, 2);
 
+      let x = 40;
+      let y = doc.y;
+
+      for (let i = 0; i < fotosAntes.length; i++) {
         try {
-          const response = await axios.get(imageUrl, {
+          const response = await axios.get(fotosAntes[i], {
             responseType: "arraybuffer",
             timeout: 15000
           });
 
           const imageBuffer = Buffer.from(response.data);
 
-          doc.addPage();
-          doc.fontSize(12).text(`ANTES - Foto ${i + 1}`, { align: "center" });
-          doc.moveDown(0.5);
-
-          doc.image(imageBuffer, {
-            fit: [450, 650],
-            align: "center",
-            valign: "center"
+          doc.image(imageBuffer, x, y, {
+            fit: [250, 200],
+            align: "center"
           });
 
-        } catch (imgErr) {
-          console.error("ERRO AO CARREGAR FOTO ANTES:", imageUrl, imgErr.message);
-
-          doc.addPage();
-          doc
-            .fontSize(12)
-            .fillColor("red")
-            .text(`Erro ao carregar imagem: ${imageUrl}`, { align: "center" });
+          x += 270; // lado a lado
+        } catch (err) {
+          console.error("ERRO FOTO ANTES:", err.message);
         }
       }
     }
 
     // ===============================
-    // DEPOIS
+    // PÁGINA 2 - DEPOIS
     // ===============================
     doc.addPage();
 
     doc.fontSize(14).fillColor("#1f2933").text("DEPOIS", { underline: true });
-    doc.moveDown(0.5);
+    doc.moveDown(0.3);
 
     doc.fontSize(11).fillColor("#000");
     doc.text(`Relatório: ${project.depois?.relatorio || "-"}`);
     doc.text(`Observação: ${project.depois?.observacao || "-"}`);
-    doc.moveDown(1);
+    doc.moveDown(0.5);
 
+    // FOTOS DEPOIS (NO MÁXIMO 2)
     if (project.depois?.fotos?.length > 0) {
-      for (let i = 0; i < project.depois.fotos.length; i++) {
-        const imageUrl = project.depois.fotos[i];
+      const fotosDepois = project.depois.fotos.slice(0, 2);
 
+      let x = 40;
+      let y = doc.y;
+
+      for (let i = 0; i < fotosDepois.length; i++) {
         try {
-          const response = await axios.get(imageUrl, {
+          const response = await axios.get(fotosDepois[i], {
             responseType: "arraybuffer",
             timeout: 15000
           });
 
           const imageBuffer = Buffer.from(response.data);
 
-          doc.addPage();
-          doc.fontSize(12).text(`DEPOIS - Foto ${i + 1}`, { align: "center" });
-          doc.moveDown(0.5);
-
-          doc.image(imageBuffer, {
-            fit: [450, 650],
-            align: "center",
-            valign: "center"
+          doc.image(imageBuffer, x, y, {
+            fit: [250, 200],
+            align: "center"
           });
 
-        } catch (imgErr) {
-          console.error("ERRO AO CARREGAR FOTO DEPOIS:", imageUrl, imgErr.message);
-
-          doc.addPage();
-          doc
-            .fontSize(12)
-            .fillColor("red")
-            .text(`Erro ao carregar imagem: ${imageUrl}`, { align: "center" });
+          x += 270;
+        } catch (err) {
+          console.error("ERRO FOTO DEPOIS:", err.message);
         }
       }
     }
@@ -468,7 +451,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
     // ===============================
     // RODAPÉ
     // ===============================
-    doc.addPage();
+    doc.moveDown(3);
 
     doc
       .fontSize(10)
@@ -477,7 +460,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
         align: "center"
       });
 
-    doc.moveDown(0.5);
+    doc.moveDown(0.3);
 
     doc.text(
       `Data: ${new Date().toLocaleDateString("pt-BR")} - ${new Date().toLocaleTimeString("pt-BR")}`,
@@ -487,7 +470,7 @@ router.get("/:id/pdf", auth, async (req, res) => {
     doc.end();
 
   } catch (err) {
-    console.error("ERRO GERAL PDF:", err);
+    console.error("ERRO PDF:", err);
     res.status(500).json({ error: "Erro ao gerar PDF" });
   }
 });
