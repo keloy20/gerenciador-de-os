@@ -1,16 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const path = require("path");
-const cors = require("cors"); // 👈 IMPORTANTE
+const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
 
 // ==========================
-// CORS - LIBERA O NEXT
+// CORS
 // ==========================
 app.use(cors({
-  origin: "*", // libera qualquer origem (localhost, vercel, etc)
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
