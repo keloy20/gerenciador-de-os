@@ -109,7 +109,7 @@ router.post("/admin/create", auth, async (req, res) => {
 router.put("/admin/cancelar/:id", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin pode cancelar" });
+      return res.status(403).json({ error: "Apenas admin" });
     }
 
     const project = await Project.findById(req.params.id);
@@ -121,12 +121,14 @@ router.put("/admin/cancelar/:id", auth, async (req, res) => {
     project.status = "cancelado";
     await project.save();
 
-    res.json({ message: "Serviço cancelado com sucesso", project });
+    res.json({ message: "Serviço cancelado com sucesso" });
+
   } catch (err) {
     console.error("ERRO CANCELAR:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ===============================
 // ADMIN – TROCAR TÉCNICO
@@ -134,13 +136,13 @@ router.put("/admin/cancelar/:id", auth, async (req, res) => {
 router.put("/admin/change-tecnico/:id", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin pode alterar técnico" });
+      return res.status(403).json({ error: "Apenas admin" });
     }
 
     const { tecnicoId } = req.body;
 
     if (!tecnicoId) {
-      return res.status(400).json({ error: "tecnicoId é obrigatório" });
+      return res.status(400).json({ error: "TecnicoId é obrigatório" });
     }
 
     const project = await Project.findById(req.params.id);
@@ -150,16 +152,17 @@ router.put("/admin/change-tecnico/:id", auth, async (req, res) => {
     }
 
     project.tecnico = tecnicoId;
-    project.status = "aguardando_tecnico";
-
+    project.status = "aguardando_tecnico"; // volta pra fila do novo técnico
     await project.save();
 
-    res.json({ message: "Técnico alterado com sucesso", project });
+    res.json({ message: "Técnico alterado com sucesso" });
+
   } catch (err) {
     console.error("ERRO TROCAR TECNICO:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ===============================
 // TÉCNICO – MEUS SERVIÇOS

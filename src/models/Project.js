@@ -17,7 +17,7 @@ const ProjectSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["aguardando_tecnico", "em_andamento", "concluido"],
+    enum: ["aguardando_tecnico", "em_andamento", "concluido,cancelado"],
     default: "aguardando_tecnico"
   },
 
