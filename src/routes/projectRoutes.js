@@ -104,6 +104,50 @@ router.post("/admin/create", auth, async (req, res) => {
 });
 
 // ===============================
+// ADMIN – EDITAR SERVIÇO
+// ===============================
+router.put("/admin/edit/:id", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin pode editar" });
+    }
+
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ error: "Serviço não encontrado" });
+    }
+
+    const {
+      cliente,
+      subgrupo,
+      unidade,
+      marca,
+      endereco,
+      tipoServico,
+      status
+    } = req.body;
+
+    if (cliente !== undefined) project.cliente = cliente;
+    if (subgrupo !== undefined) project.subgrupo = subgrupo;
+    if (unidade !== undefined) project.unidade = unidade;
+    if (marca !== undefined) project.marca = marca;
+    if (endereco !== undefined) project.endereco = endereco;
+    if (tipoServico !== undefined) project.tipoServico = tipoServico;
+    if (status !== undefined) project.status = status;
+
+    await project.save();
+
+    res.json(project);
+
+  } catch (err) {
+    console.error("ERRO EDIT ADMIN:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ===============================
 // ADMIN – CANCELAR SERVIÇO
 // ===============================
 router.put("/admin/cancelar/:id", auth, async (req, res) => {
