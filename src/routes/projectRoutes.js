@@ -53,7 +53,8 @@ router.get("/admin/view/:id", auth, async (req, res) => {
       return res.status(403).json({ error: "Acesso negado" });
     }
 
-    const project = await Project.findById(req.params.id).populate("tecnico", "nome email");
+    const project = await Project.findById(req.params.id)
+      .populate("tecnico", "nome email");
 
     if (!project) {
       return res.status(404).json({ error: "Serviço não encontrado" });
@@ -139,13 +140,11 @@ router.put("/admin/edit/:id", auth, async (req, res) => {
     await project.save();
 
     res.json(project);
-
   } catch (err) {
     console.error("ERRO EDIT ADMIN:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ===============================
 // ADMIN – CANCELAR SERVIÇO
@@ -166,13 +165,11 @@ router.put("/admin/cancelar/:id", auth, async (req, res) => {
     await project.save();
 
     res.json({ message: "Serviço cancelado com sucesso" });
-
   } catch (err) {
     console.error("ERRO CANCELAR:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ===============================
 // ADMIN – TROCAR TÉCNICO
@@ -186,7 +183,7 @@ router.put("/admin/change-tecnico/:id", auth, async (req, res) => {
     const { tecnicoId } = req.body;
 
     if (!tecnicoId) {
-      return res.status(400).json({ error: "TecnicoId é obrigatório" });
+      return res.status(400).json({ error: "tecnicoId é obrigatório" });
     }
 
     const project = await Project.findById(req.params.id);
@@ -197,23 +194,24 @@ router.put("/admin/change-tecnico/:id", auth, async (req, res) => {
 
     project.tecnico = tecnicoId;
     project.status = "aguardando_tecnico"; // volta pra fila do novo técnico
+
     await project.save();
 
     res.json({ message: "Técnico alterado com sucesso" });
-
   } catch (err) {
     console.error("ERRO TROCAR TECNICO:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-
 // ===============================
 // TÉCNICO – MEUS SERVIÇOS
 // ===============================
 router.get("/me", auth, async (req, res) => {
   try {
-    const projetos = await Project.find({ tecnico: req.userId }).sort({ createdAt: -1 });
+    const projetos = await Project.find({ tecnico: req.userId })
+      .sort({ createdAt: -1 });
+
     res.json(projetos);
   } catch (err) {
     console.error("ERRO ME:", err);
@@ -252,7 +250,9 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
     const project = await Project.findById(req.params.id);
 
     if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
-    if (String(project.tecnico) !== String(req.userId)) return res.status(403).json({ error: "Sem permissão" });
+    if (String(project.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "Sem permissão" });
+    }
 
     const urls = [];
 
@@ -284,7 +284,9 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
     const project = await Project.findById(req.params.id);
 
     if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
-    if (String(project.tecnico) !== String(req.userId)) return res.status(403).json({ error: "Sem permissão" });
+    if (String(project.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "Sem permissão" });
+    }
 
     const urls = [];
 
@@ -315,11 +317,15 @@ router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
 // ===============================
 router.get("/:id", auth, async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id).populate("tecnico", "nome email");
+    const project = await Project.findById(req.params.id)
+      .populate("tecnico", "nome email");
 
     if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
 
-    if (req.userRole !== "admin" && String(project.tecnico._id) !== String(req.userId)) {
+    if (
+      req.userRole !== "admin" &&
+      String(project.tecnico._id) !== String(req.userId)
+    ) {
       return res.status(403).json({ error: "Acesso negado" });
     }
 
@@ -335,7 +341,8 @@ router.get("/:id", auth, async (req, res) => {
 // ===============================
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id).populate("tecnico", "nome email");
+    const project = await Project.findById(req.params.id)
+      .populate("tecnico", "nome email");
 
     if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
 
