@@ -84,18 +84,14 @@ router.post("/admin/create", auth, async (req, res) => {
       return res.status(400).json({ error: "Preencha todos os campos" });
     }
 
-    if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
-      return res.status(400).json({ error: "Unidade e marca obrigatórias para Timão" });
-    }
-
     const osNumero = await gerarNumeroOS();
 
     const project = await Project.create({
       osNumero,
       cliente,
       subgrupo,
-      unidade: cliente.toLowerCase() === "timao" ? unidade : null,
-      marca: cliente.toLowerCase() === "timao" ? marca : null,
+      unidade: unidade || null,
+      marca: marca || null,
       endereco,
       tipoServico,
       tecnico: tecnicoId,
@@ -107,44 +103,6 @@ router.post("/admin/create", auth, async (req, res) => {
 
   } catch (err) {
     console.error("ERRO ADMIN CREATE:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ===============================
-// TÉCNICO – ABRIR CHAMADO
-// ===============================
-router.post("/start", auth, async (req, res) => {
-  try {
-    const { cliente, subgrupo, unidade, marca, endereco, tipoServico } = req.body;
-
-    if (!cliente || !endereco || !tipoServico) {
-      return res.status(400).json({ error: "Cliente, endereço e tipo de serviço são obrigatórios" });
-    }
-
-    if (cliente.toLowerCase() === "timao" && (!unidade || !marca)) {
-      return res.status(400).json({ error: "Unidade e marca são obrigatórias para o cliente Timão" });
-    }
-
-    const osNumero = await gerarNumeroOS();
-
-    const project = await Project.create({
-      osNumero,
-      cliente,
-      subgrupo,
-      unidade: cliente.toLowerCase() === "timao" ? unidade : null,
-      marca: cliente.toLowerCase() === "timao" ? marca : null,
-      endereco,
-      tipoServico,
-      tecnico: req.userId,
-      status: "aguardando_tecnico",
-      dataServico: new Date()
-    });
-
-    res.status(201).json(project);
-
-  } catch (err) {
-    console.error("ERRO START:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -176,9 +134,8 @@ router.post("/:id/abrir", auth, async (req, res) => {
       return res.status(404).json({ error: "Serviço não encontrado" });
     }
 
-    // só o técnico dono pode abrir
     if (String(project.tecnico) !== String(req.userId)) {
-      return res.status(403).json({ error: "Você não tem permissão para este serviço" });
+      return res.status(403).json({ error: "Sem permissão" });
     }
 
     if (project.status === "aguardando_tecnico") {
@@ -195,37 +152,35 @@ router.post("/:id/abrir", auth, async (req, res) => {
 });
 
 // ===============================
-// TÉCNICO – ENVIAR ANTES
+// TÉCNICO – EDITAR / ENVIAR ANTES (PODE EDITAR MESMO CONCLUÍDO)
 // ===============================
 router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
 
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
+    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
 
-    // só o técnico dono pode enviar
     if (String(project.tecnico) !== String(req.userId)) {
       return res.status(403).json({ error: "Sem permissão" });
     }
 
     const urls = [];
 
-    for (let file of req.files) {
-      const result = await cloudinary.uploader.upload(file.path);
-      urls.push(result.secure_url);
+    if (req.files && req.files.length > 0) {
+      for (let file of req.files) {
+        const result = await cloudinary.uploader.upload(file.path);
+        urls.push(result.secure_url);
+      }
     }
 
     project.antes = {
-      fotos: urls,
-      relatorio: req.body.relatorio || "",
-      observacao: req.body.observacao || "",
+      fotos: urls.length > 0 ? urls : project.antes?.fotos || [],
+      relatorio: req.body.relatorio || project.antes?.relatorio || "",
+      observacao: req.body.observacao || project.antes?.observacao || "",
       data: new Date()
     };
 
     await project.save();
-
     return res.json(project);
 
   } catch (err) {
@@ -234,24 +189,60 @@ router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
   }
 });
 
+// ===============================
+// TÉCNICO – EDITAR / ENVIAR DEPOIS (PODE EDITAR MESMO CONCLUÍDO)
+// ===============================
+router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
 
+    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
+
+    if (String(project.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "Sem permissão" });
+    }
+
+    const urls = [];
+
+    if (req.files && req.files.length > 0) {
+      for (let file of req.files) {
+        const result = await cloudinary.uploader.upload(file.path);
+        urls.push(result.secure_url);
+      }
+    }
+
+    project.depois = {
+      fotos: urls.length > 0 ? urls : project.depois?.fotos || [],
+      relatorio: req.body.relatorio || project.depois?.relatorio || "",
+      observacao: req.body.observacao || project.depois?.observacao || "",
+      data: new Date()
+    };
+
+    project.status = "concluido";
+
+    await project.save();
+    return res.json(project);
+
+  } catch (err) {
+    console.error("ERRO DEPOIS:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 // ===============================
-// BUSCAR SERVIÇO POR ID (POR ÚLTIMO)
+// BUSCAR SERVIÇO POR ID
 // ===============================
 router.get("/:id", auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
 
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
+    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
 
     if (
       req.userRole !== "admin" &&
       String(project.tecnico) !== String(req.userId)
     ) {
-      return res.status(403).json({ error: "Acesso negado a este serviço" });
+      return res.status(403).json({ error: "Acesso negado" });
     }
 
     res.json(project);
@@ -263,229 +254,37 @@ router.get("/:id", auth, async (req, res) => {
 });
 
 // ===============================
-// TÉCNICO – ENVIAR DEPOIS (FINALIZA)
-// ===============================
-router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
-  try {
-    const project = await Project.findById(req.params.id);
-
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
-
-    // só o técnico dono pode finalizar
-    if (String(project.tecnico) !== String(req.userId)) {
-      return res.status(403).json({ error: "Sem permissão" });
-    }
-
-    const urls = [];
-
-    for (let file of req.files) {
-      const result = await cloudinary.uploader.upload(file.path);
-      urls.push(result.secure_url);
-    }
-
-    project.depois = {
-      fotos: urls,
-      relatorio: req.body.relatorio || "",
-      observacao: req.body.observacao || "",
-      data: new Date()
-    };
-
-    project.status = "concluido";
-
-    await project.save();
-
-    return res.json(project);
-
-  } catch (err) {
-    console.error("ERRO DEPOIS:", err);
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// ===============================
-// GERAR PDF DO SERVIÇO (2 PÁGINAS - 4 FOTOS ANTES / 4 FOTOS DEPOIS)
+// GERAR PDF
 // ===============================
 router.get("/:id/pdf", auth, async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id)
-      .populate("tecnico", "nome email");
+    const project = await Project.findById(req.params.id).populate("tecnico", "nome");
 
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
-
-    if (
-      req.userRole !== "admin" &&
-      String(project.tecnico?._id) !== String(req.userId)
-    ) {
-      return res.status(403).json({ error: "Acesso negado" });
-    }
+    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
 
     const doc = new PDFDocument({ size: "A4", margin: 40 });
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=OS-${project.osNumero}.pdf`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename=OS-${project.osNumero}.pdf`);
 
     doc.pipe(res);
 
-    // ===============================
-    // PÁGINA 1 - CABEÇALHO + DADOS + ANTES
-    // ===============================
-    doc
-      .fontSize(20)
-      .fillColor("#111827")
-      .text("ORDEM DE SERVIÇO", { align: "center" });
-
-    doc.moveDown(0.5);
-
-    doc
-      .fontSize(10)
-      .fillColor("#374151")
-      .text(`OS: ${project.osNumero}`, { align: "center" });
-
-    doc.moveDown(1);
-
-    doc
-      .moveTo(40, doc.y)
-      .lineTo(550, doc.y)
-      .strokeColor("#e5e7eb")
-      .stroke();
-
-    doc.moveDown(1);
-
-    doc.fontSize(12).fillColor("#000");
-
+    doc.fontSize(18).text("ORDEM DE SERVIÇO", { align: "center" });
+    doc.moveDown();
+    doc.fontSize(12).text(`OS: ${project.osNumero}`);
     doc.text(`Cliente: ${project.cliente}`);
-    if (project.unidade) doc.text(`Unidade: ${project.unidade}`);
-    if (project.marca) doc.text(`Marca: ${project.marca}`);
     doc.text(`Endereço: ${project.endereco}`);
-    doc.text(`Tipo de Serviço: ${project.tipoServico}`);
-    doc.text(`Status: ${project.status}`);
     doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
+    doc.moveDown();
 
-    doc.moveDown(1);
+    doc.fontSize(14).text("ANTES");
+    doc.fontSize(11).text(project.antes?.relatorio || "-");
+    doc.moveDown();
 
-    // ===== ANTES =====
-    doc.fontSize(14).fillColor("#1f2933").text("ANTES", { underline: true });
-    doc.moveDown(0.3);
-
-    doc.fontSize(11).fillColor("#000");
-    doc.text(`Relatório: ${project.antes?.relatorio || "-"}`);
-    doc.text(`Observação: ${project.antes?.observacao || "-"}`);
-    doc.moveDown(0.5);
-
-    // ===== FOTOS ANTES (4 EM GRADE 2x2) =====
-    if (project.antes?.fotos?.length > 0) {
-      const fotosAntes = project.antes.fotos.slice(0, 4);
-
-      let x = 40;
-      let y = doc.y;
-      let count = 0;
-
-      for (let i = 0; i < fotosAntes.length; i++) {
-        try {
-          const response = await axios.get(fotosAntes[i], {
-            responseType: "arraybuffer",
-            timeout: 15000
-          });
-
-          const imageBuffer = Buffer.from(response.data);
-
-          doc.image(imageBuffer, x, y, {
-            width: 230,
-            height: 160,
-            align: "center",
-            valign: "center"
-          });
-
-          x += 250;
-          count++;
-
-          if (count === 2) {
-            x = 40;
-            y += 180;
-            count = 0;
-          }
-        } catch (err) {
-          console.error("ERRO FOTO ANTES:", err.message);
-        }
-      }
-    }
-
-    // ===============================
-    // PÁGINA 2 - DEPOIS
-    // ===============================
     doc.addPage();
 
-    doc.fontSize(14).fillColor("#1f2933").text("DEPOIS", { underline: true });
-    doc.moveDown(0.3);
-
-    doc.fontSize(11).fillColor("#000");
-    doc.text(`Relatório: ${project.depois?.relatorio || "-"}`);
-    doc.text(`Observação: ${project.depois?.observacao || "-"}`);
-    doc.moveDown(0.5);
-
-    // ===== FOTOS DEPOIS (4 EM GRADE 2x2) =====
-    if (project.depois?.fotos?.length > 0) {
-      const fotosDepois = project.depois.fotos.slice(0, 4);
-
-      let x = 40;
-      let y = doc.y;
-      let count = 0;
-
-      for (let i = 0; i < fotosDepois.length; i++) {
-        try {
-          const response = await axios.get(fotosDepois[i], {
-            responseType: "arraybuffer",
-            timeout: 15000
-          });
-
-          const imageBuffer = Buffer.from(response.data);
-
-          doc.image(imageBuffer, x, y, {
-            width: 230,
-            height: 160,
-            align: "center",
-            valign: "center"
-          });
-
-          x += 250;
-          count++;
-
-          if (count === 2) {
-            x = 40;
-            y += 180;
-            count = 0;
-          }
-        } catch (err) {
-          console.error("ERRO FOTO DEPOIS:", err.message);
-        }
-      }
-    }
-
-    // ===============================
-    // RODAPÉ FIXO (NUNCA CRIA 3ª PÁGINA)
-    // ===============================
-    doc.y = 700;
-
-    doc
-      .fontSize(10)
-      .fillColor("#6b7280")
-      .text("Relatório gerado automaticamente pelo Sistema de OS", {
-        align: "center"
-      });
-
-    doc.moveDown(0.3);
-
-    doc.text(
-      `Data: ${new Date().toLocaleDateString("pt-BR")} - ${new Date().toLocaleTimeString("pt-BR")}`,
-      { align: "center" }
-    );
+    doc.fontSize(14).text("DEPOIS");
+    doc.fontSize(11).text(project.depois?.relatorio || "-");
 
     doc.end();
 
@@ -494,6 +293,5 @@ router.get("/:id/pdf", auth, async (req, res) => {
     res.status(500).json({ error: "Erro ao gerar PDF" });
   }
 });
-
 
 module.exports = router;
