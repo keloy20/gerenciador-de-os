@@ -3,6 +3,8 @@ const router = express.Router();
 const Project = require("../models/Project");
 const User = require("../models/User");
 const auth = require("../middlewares/auth");
+const upload = require("../middlewares/upload");
+
 
 // ===============================
 // LISTAR TODAS OS (ADMIN)
@@ -220,7 +222,7 @@ router.put("/tecnico/abrir/:id", auth, async (req, res) => {
 // ===============================
 // TÉCNICO - SALVAR ANTES
 // ===============================
-router.put("/tecnico/antes/:id", auth, async (req, res) => {
+rrouter.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) => {
   if (req.userRole !== "tecnico") {
     return res.status(403).json({ error: "Apenas técnico" });
   }
@@ -235,14 +237,24 @@ router.put("/tecnico/antes/:id", auth, async (req, res) => {
       return res.status(404).json({ error: "OS não encontrada" });
     }
 
-    projeto.antes = req.body;
+    projeto.antes = {
+      relatorio: req.body.relatorio || "",
+      observacao: req.body.observacao || "",
+      fotos: req.files?.map((f) => ({
+        nome: f.originalname,
+        tipo: f.mimetype,
+        base64: f.buffer.toString("base64")
+      })) || []
+    };
+
     projeto.status = "em_andamento";
 
     await projeto.save();
 
-    res.json({ message: "ANTES salvo", projeto });
+    res.json({ message: "ANTES salvo com sucesso", projeto });
+
   } catch (err) {
-    console.error(err);
+    console.error("ERRO ANTES:", err);
     res.status(500).json({ error: "Erro ao salvar ANTES" });
   }
 });
@@ -250,7 +262,7 @@ router.put("/tecnico/antes/:id", auth, async (req, res) => {
 // ===============================
 // TÉCNICO - SALVAR DEPOIS
 // ===============================
-router.put("/tecnico/depois/:id", auth, async (req, res) => {
+router.put("/tecnico/depois/:id", auth, upload.array("fotos"), async (req, res) => {
   if (req.userRole !== "tecnico") {
     return res.status(403).json({ error: "Apenas técnico" });
   }
@@ -265,17 +277,28 @@ router.put("/tecnico/depois/:id", auth, async (req, res) => {
       return res.status(404).json({ error: "OS não encontrada" });
     }
 
-    projeto.depois = req.body;
+    projeto.depois = {
+      relatorio: req.body.relatorio || "",
+      observacao: req.body.observacao || "",
+      fotos: req.files?.map((f) => ({
+        nome: f.originalname,
+        tipo: f.mimetype,
+        base64: f.buffer.toString("base64")
+      })) || []
+    };
+
     projeto.status = "concluido";
 
     await projeto.save();
 
-    res.json({ message: "DEPOIS salvo", projeto });
+    res.json({ message: "DEPOIS salvo com sucesso", projeto });
+
   } catch (err) {
-    console.error(err);
+    console.error("ERRO DEPOIS:", err);
     res.status(500).json({ error: "Erro ao salvar DEPOIS" });
   }
 });
+
 
 // ===============================
 // ADMIN - LISTAR TÉCNICOS
