@@ -15,7 +15,7 @@ router.get("/admin/all", auth, async (req, res) => {
   try {
     const projetos = await Project.find()
       .populate("tecnico", "nome email")
-      .sort({ createdAt: -1 }); // <<< MAIS NOVAS PRIMEIRO
+      .sort({ createdAt: -1 });
 
     res.json(projetos);
   } catch (err) {
@@ -83,6 +83,7 @@ router.post("/admin/create", auth, async (req, res) => {
       unidade,
       detalhamento,
       tecnico: tecnicoId || null,
+      status: "aguardando_tecnico",
       osNumero
     });
 
@@ -160,6 +161,59 @@ router.get("/tecnico/my", auth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao buscar OS" });
+  }
+});
+
+// ===============================
+// TÉCNICO - VER OS POR ID
+// ===============================
+router.get("/tecnico/view/:id", auth, async (req, res) => {
+  if (req.userRole !== "tecnico") {
+    return res.status(403).json({ error: "Apenas técnico" });
+  }
+
+  try {
+    const projeto = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
+
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    res.json(projeto);
+  } catch (err) {
+    console.error("ERRO AO BUSCAR OS TÉCNICO:", err);
+    res.status(500).json({ error: "Erro ao buscar OS" });
+  }
+});
+
+// ===============================
+// TÉCNICO - ABRIR CHAMADO
+// ===============================
+router.put("/tecnico/abrir/:id", auth, async (req, res) => {
+  if (req.userRole !== "tecnico") {
+    return res.status(403).json({ error: "Apenas técnico" });
+  }
+
+  try {
+    const projeto = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
+
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    projeto.status = "em_andamento";
+    await projeto.save();
+
+    res.json({ message: "Chamado iniciado", projeto });
+  } catch (err) {
+    console.error("ERRO AO ABRIR CHAMADO:", err);
+    res.status(500).json({ error: "Erro ao iniciar chamado" });
   }
 });
 
