@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const Project = require("../models/Project"); // <<< ADICIONADO
+const Project = require("../models/Project");
 const auth = require("../middlewares/auth");
 
 // =====================
@@ -38,6 +38,39 @@ router.post("/login", async (req, res) => {
 });
 
 // =====================
+// CADASTRAR TÉCNICO (ADMIN)
+// =====================
+router.post("/register", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin pode cadastrar técnico" });
+  }
+
+  const { nome, email, senha } = req.body;
+
+  try {
+    const existe = await User.findOne({ email });
+    if (existe) {
+      return res.status(400).json({ error: "Email já cadastrado" });
+    }
+
+    const hash = await bcrypt.hash(senha, 10);
+
+    const user = await User.create({
+      nome,
+      email,
+      senha: hash,
+      role: "tecnico"
+    });
+
+    res.json({ message: "Técnico cadastrado com sucesso", user });
+
+  } catch (err) {
+    console.error("ERRO AO CADASTRAR TÉCNICO:", err);
+    res.status(500).json({ error: "Erro ao cadastrar técnico" });
+  }
+});
+
+// =====================
 // LISTAR TÉCNICOS (ADMIN)
 // =====================
 router.get("/tecnicos", auth, async (req, res) => {
@@ -55,7 +88,7 @@ router.get("/tecnicos", auth, async (req, res) => {
 });
 
 // ===============================
-// EXCLUIR TÉCNICO (ADMIN) – CORRIGIDO
+// EXCLUIR TÉCNICO (ADMIN)
 // ===============================
 router.delete("/tecnicos/:id", auth, async (req, res) => {
   if (req.userRole !== "admin") {
@@ -69,13 +102,12 @@ router.delete("/tecnicos/:id", auth, async (req, res) => {
       return res.status(404).json({ error: "Técnico não encontrado" });
     }
 
-    // 🔥 PASSO 1 – Desvincula o técnico das OS
+    // Desvincula o técnico das OS
     await Project.updateMany(
       { tecnico: req.params.id },
       { $set: { tecnico: null, status: "aguardando_tecnico" } }
     );
 
-    // 🔥 PASSO 2 – Exclui o técnico
     await User.findByIdAndDelete(req.params.id);
 
     res.json({ message: "Técnico excluído com sucesso" });
