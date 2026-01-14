@@ -5,7 +5,6 @@ const User = require("../models/User");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
 
-
 // ===============================
 // LISTAR TODAS OS (ADMIN)
 // ===============================
@@ -222,7 +221,7 @@ router.put("/tecnico/abrir/:id", auth, async (req, res) => {
 // ===============================
 // TÉCNICO - SALVAR ANTES
 // ===============================
-rrouter.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) => {
+router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) => {
   if (req.userRole !== "tecnico") {
     return res.status(403).json({ error: "Apenas técnico" });
   }
@@ -299,7 +298,6 @@ router.put("/tecnico/depois/:id", auth, upload.array("fotos"), async (req, res) 
   }
 });
 
-
 // ===============================
 // ADMIN - LISTAR TÉCNICOS
 // ===============================
@@ -326,7 +324,6 @@ router.delete("/tecnicos/:id", auth, async (req, res) => {
   }
 
   try {
-    // Desvincula o técnico das OS antes de excluir (IMPORTANTE)
     await Project.updateMany(
       { tecnico: req.params.id },
       { $set: { tecnico: null, status: "aguardando_tecnico" } }
