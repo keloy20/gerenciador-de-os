@@ -26,7 +26,7 @@ async function carregarChamado() {
 
     document.getElementById("osNumero").innerText = data.osNumero || "-";
     document.getElementById("cliente").innerText = data.cliente || "-";
-    document.getElementById("subgrupo").innerText = data.subgrupo || "-";
+    document.getElementById("subcliente").innerText = data.Subcliente || "-";
     document.getElementById("unidade").innerText = data.unidade || "-";
     document.getElementById("marca").innerText = data.marca || "-";
     document.getElementById("endereco").innerText = data.endereco || "-";

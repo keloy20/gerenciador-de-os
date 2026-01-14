@@ -1,369 +1,225 @@
 const express = require("express");
 const router = express.Router();
 const Project = require("../models/Project");
-const Counter = require("../models/Counter");
+const User = require("../models/User");
 const auth = require("../middlewares/auth");
-const upload = require("../middlewares/upload");
-const cloudinary = require("../config/cloudinary");
-const PDFDocument = require("pdfkit");
-const axios = require("axios");
 
 // ===============================
-// GERAR NÚMERO DA OS
-// ===============================
-async function gerarNumeroOS() {
-  const ano = new Date().getFullYear();
-
-  const counter = await Counter.findOneAndUpdate(
-    { name: `os-${ano}` },
-    { $inc: { seq: 1 } },
-    { new: true, upsert: true }
-  );
-
-  const numeroFormatado = String(counter.seq).padStart(4, "0");
-  return `${numeroFormatado}-${ano}`;
-}
-
-// ===============================
-// ADMIN – TODOS OS SERVIÇOS
+// LISTAR TODAS OS (ADMIN)
 // ===============================
 router.get("/admin/all", auth, async (req, res) => {
-  try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Acesso negado" });
-    }
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Acesso negado" });
+  }
 
+  try {
     const projetos = await Project.find()
       .populate("tecnico", "nome email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }); // <<< MAIS NOVAS PRIMEIRO
 
     res.json(projetos);
   } catch (err) {
-    console.error("ERRO ADMIN ALL:", err);
-    res.status(500).json({ error: err.message });
+    console.error("ERRO AO BUSCAR OS:", err);
+    res.status(500).json({ error: "Erro ao buscar OS" });
   }
 });
 
 // ===============================
-// ADMIN – VER CHAMADO
+// ADMIN - VER OS POR ID
 // ===============================
 router.get("/admin/view/:id", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Acesso negado" });
+  }
+
   try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Acesso negado" });
+    const projeto = await Project.findById(req.params.id).populate("tecnico", "nome email");
+
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
     }
 
-    const project = await Project.findById(req.params.id)
-      .populate("tecnico", "nome email");
-
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
-
-    res.json(project);
+    res.json(projeto);
   } catch (err) {
-    console.error("ERRO VIEW:", err);
-    res.status(500).json({ error: "Erro ao buscar chamado" });
+    console.error(err);
+    res.status(500).json({ error: "Erro ao buscar OS" });
   }
 });
 
 // ===============================
-// ADMIN – CRIAR SERVIÇO
+// ADMIN - CRIAR OS
 // ===============================
 router.post("/admin/create", auth, async (req, res) => {
-  try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin" });
-    }
-
-    const { cliente, subgrupo, unidade, marca, endereco, tipoServico, tecnicoId } = req.body;
-
-    if (!cliente || !endereco || !tipoServico || !tecnicoId) {
-      return res.status(400).json({ error: "Preencha todos os campos" });
-    }
-
-    const osNumero = await gerarNumeroOS();
-
-    const project = await Project.create({
-      osNumero,
-      cliente,
-      subgrupo,
-      unidade,
-      marca,
-      endereco,
-      tipoServico,
-      tecnico: tecnicoId,
-      status: "aguardando_tecnico",
-      dataServico: new Date()
-    });
-
-    res.status(201).json(project);
-  } catch (err) {
-    console.error("ERRO ADMIN CREATE:", err);
-    res.status(500).json({ error: err.message });
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin pode criar OS" });
   }
-});
 
-// ===============================
-// ADMIN – EDITAR SERVIÇO
-// ===============================
-router.put("/admin/edit/:id", auth, async (req, res) => {
   try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin pode editar" });
-    }
-
-    const project = await Project.findById(req.params.id);
-
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
-
     const {
       cliente,
-      subgrupo,
-      unidade,
-      marca,
+      Subcliente,
       endereco,
-      tipoServico,
-      status
+      telefone,
+      marca,
+      unidade,
+      tecnicoId,
+      detalhamento
     } = req.body;
 
-    if (cliente !== undefined) project.cliente = cliente;
-    if (subgrupo !== undefined) project.subgrupo = subgrupo;
-    if (unidade !== undefined) project.unidade = unidade;
-    if (marca !== undefined) project.marca = marca;
-    if (endereco !== undefined) project.endereco = endereco;
-    if (tipoServico !== undefined) project.tipoServico = tipoServico;
-    if (status !== undefined) project.status = status;
+    if (!cliente) {
+      return res.status(400).json({ error: "Cliente é obrigatório" });
+    }
 
-    await project.save();
+    const total = await Project.countDocuments();
+    const ano = new Date().getFullYear();
+    const osNumero = `${String(total + 1).padStart(4, "0")}-${ano}`;
 
-    res.json(project);
+    const projeto = await Project.create({
+      cliente,
+      Subcliente,
+      endereco,
+      telefone,
+      marca,
+      unidade,
+      detalhamento,
+      tecnico: tecnicoId || null,
+      osNumero
+    });
+
+    res.json(projeto);
   } catch (err) {
-    console.error("ERRO EDIT ADMIN:", err);
-    res.status(500).json({ error: err.message });
+    console.error("ERRO AO CRIAR OS:", err);
+    res.status(500).json({ error: "Erro ao criar OS" });
   }
 });
 
 // ===============================
-// ADMIN – CANCELAR SERVIÇO
+// ADMIN - EDITAR OS
+// ===============================
+router.put("/admin/update/:id", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin pode editar OS" });
+  }
+
+  try {
+    const projeto = await Project.findById(req.params.id);
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    Object.assign(projeto, req.body);
+
+    if (req.body.tecnicoId !== undefined) {
+      projeto.tecnico = req.body.tecnicoId || null;
+    }
+
+    await projeto.save();
+
+    res.json({ message: "OS atualizada com sucesso", projeto });
+  } catch (err) {
+    console.error("ERRO EDITAR OS:", err);
+    res.status(500).json({ error: "Erro ao editar OS" });
+  }
+});
+
+// ===============================
+// ADMIN - CANCELAR OS
 // ===============================
 router.put("/admin/cancelar/:id", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin" });
+  }
+
   try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin" });
+    const projeto = await Project.findById(req.params.id);
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
     }
 
-    const project = await Project.findById(req.params.id);
+    projeto.status = "cancelado";
+    await projeto.save();
 
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
-
-    project.status = "cancelado";
-    await project.save();
-
-    res.json({ message: "Serviço cancelado com sucesso" });
+    res.json({ message: "OS cancelada" });
   } catch (err) {
-    console.error("ERRO CANCELAR:", err);
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Erro ao cancelar OS" });
   }
 });
 
 // ===============================
-// ADMIN – TROCAR TÉCNICO
+// TÉCNICO - LISTAR SUAS OS
 // ===============================
-router.put("/admin/change-tecnico/:id", auth, async (req, res) => {
-  try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin" });
-    }
-
-    const { tecnicoId } = req.body;
-
-    if (!tecnicoId) {
-      return res.status(400).json({ error: "tecnicoId é obrigatório" });
-    }
-
-    const project = await Project.findById(req.params.id);
-
-    if (!project) {
-      return res.status(404).json({ error: "Serviço não encontrado" });
-    }
-
-    project.tecnico = tecnicoId;
-    project.status = "aguardando_tecnico"; // volta pra fila do novo técnico
-
-    await project.save();
-
-    res.json({ message: "Técnico alterado com sucesso" });
-  } catch (err) {
-    console.error("ERRO TROCAR TECNICO:", err);
-    res.status(500).json({ error: err.message });
+router.get("/tecnico/my", auth, async (req, res) => {
+  if (req.userRole !== "tecnico") {
+    return res.status(403).json({ error: "Apenas técnico" });
   }
-});
 
-// ===============================
-// TÉCNICO – MEUS SERVIÇOS
-// ===============================
-router.get("/me", auth, async (req, res) => {
   try {
-    const projetos = await Project.find({ tecnico: req.userId })
-      .sort({ createdAt: -1 });
-
+    const projetos = await Project.find({ tecnico: req.userId });
     res.json(projetos);
   } catch (err) {
-    console.error("ERRO ME:", err);
-    res.status(500).json({ error: "Erro ao buscar serviços" });
+    console.error(err);
+    res.status(500).json({ error: "Erro ao buscar OS" });
   }
 });
 
 // ===============================
-// TÉCNICO – ABRIR SERVIÇO
+// TÉCNICO - SALVAR ANTES
 // ===============================
-router.post("/:id/abrir", auth, async (req, res) => {
+router.put("/tecnico/antes/:id", auth, async (req, res) => {
+  if (req.userRole !== "tecnico") {
+    return res.status(403).json({ error: "Apenas técnico" });
+  }
+
   try {
-    const project = await Project.findById(req.params.id);
+    const projeto = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
 
-    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
-
-    if (String(project.tecnico) !== String(req.userId)) {
-      return res.status(403).json({ error: "Sem permissão" });
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
     }
 
-    project.status = "em_andamento";
-    await project.save();
+    projeto.antes = req.body;
+    projeto.status = "em_andamento";
 
-    res.json(project);
+    await projeto.save();
+
+    res.json({ message: "ANTES salvo", projeto });
   } catch (err) {
-    console.error("ERRO ABRIR:", err);
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Erro ao salvar ANTES" });
   }
 });
 
 // ===============================
-// TÉCNICO – ENVIAR ANTES
+// TÉCNICO - SALVAR DEPOIS
 // ===============================
-router.post("/:id/antes", auth, upload.array("fotos", 4), async (req, res) => {
-  try {
-    const project = await Project.findById(req.params.id);
-
-    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
-    if (String(project.tecnico) !== String(req.userId)) {
-      return res.status(403).json({ error: "Sem permissão" });
-    }
-
-    const urls = [];
-
-    for (let file of req.files) {
-      const result = await cloudinary.uploader.upload(file.path);
-      urls.push(result.secure_url);
-    }
-
-    project.antes = {
-      fotos: urls,
-      relatorio: req.body.relatorio || "",
-      observacao: req.body.observacao || "",
-      data: new Date()
-    };
-
-    await project.save();
-    res.json(project);
-  } catch (err) {
-    console.error("ERRO ANTES:", err);
-    res.status(500).json({ error: err.message });
+router.put("/tecnico/depois/:id", auth, async (req, res) => {
+  if (req.userRole !== "tecnico") {
+    return res.status(403).json({ error: "Apenas técnico" });
   }
-});
 
-// ===============================
-// TÉCNICO – ENVIAR DEPOIS
-// ===============================
-router.post("/:id/depois", auth, upload.array("fotos", 4), async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id);
+    const projeto = await Project.findOne({
+      _id: req.params.id,
+      tecnico: req.userId
+    });
 
-    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
-    if (String(project.tecnico) !== String(req.userId)) {
-      return res.status(403).json({ error: "Sem permissão" });
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
     }
 
-    const urls = [];
+    projeto.depois = req.body;
+    projeto.status = "concluido";
 
-    for (let file of req.files) {
-      const result = await cloudinary.uploader.upload(file.path);
-      urls.push(result.secure_url);
-    }
+    await projeto.save();
 
-    project.depois = {
-      fotos: urls,
-      relatorio: req.body.relatorio || "",
-      observacao: req.body.observacao || "",
-      data: new Date()
-    };
-
-    project.status = "concluido";
-
-    await project.save();
-    res.json(project);
+    res.json({ message: "DEPOIS salvo", projeto });
   } catch (err) {
-    console.error("ERRO DEPOIS:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ===============================
-// BUSCAR POR ID
-// ===============================
-router.get("/:id", auth, async (req, res) => {
-  try {
-    const project = await Project.findById(req.params.id)
-      .populate("tecnico", "nome email");
-
-    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
-
-    if (
-      req.userRole !== "admin" &&
-      String(project.tecnico._id) !== String(req.userId)
-    ) {
-      return res.status(403).json({ error: "Acesso negado" });
-    }
-
-    res.json(project);
-  } catch (err) {
-    console.error("ERRO GET ID:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ===============================
-// GERAR PDF
-// ===============================
-router.get("/:id/pdf", auth, async (req, res) => {
-  try {
-    const project = await Project.findById(req.params.id)
-      .populate("tecnico", "nome email");
-
-    if (!project) return res.status(404).json({ error: "Serviço não encontrado" });
-
-    const doc = new PDFDocument({ size: "A4", margin: 40 });
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=OS-${project.osNumero}.pdf`);
-
-    doc.pipe(res);
-
-    doc.fontSize(20).text("ORDEM DE SERVIÇO", { align: "center" });
-    doc.moveDown();
-    doc.text(`OS: ${project.osNumero}`);
-    doc.text(`Cliente: ${project.cliente}`);
-    doc.text(`Endereço: ${project.endereco}`);
-    doc.text(`Técnico: ${project.tecnico?.nome || "-"}`);
-
-    doc.end();
-  } catch (err) {
-    console.error("ERRO PDF:", err);
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Erro ao salvar DEPOIS" });
   }
 });
 

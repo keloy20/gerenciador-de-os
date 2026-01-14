@@ -91,7 +91,7 @@ function renderLista(servicos) {
     tr.innerHTML = `
       <td>${servico.osNumero || "-"}</td>
       <td>${servico.cliente || "-"}</td>
-      <td>${servico.subgrupo || "-"}</td>
+      <td>${servico.Subcliente || "-"}</td>
       <td>${servico.tipoServico || "-"}</td>
       <td>${tecnicoNome}</td>
       <td><span class="${statusClass}">${statusLabel}</span></td>

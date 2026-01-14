@@ -23,7 +23,7 @@ inputCliente.addEventListener("input", () => {
 
 async function criarServico() {
   const cliente = document.getElementById("cliente").value.trim();
-  const subgrupo = document.getElementById("subgrupo").value.trim();
+  const subcliente = document.getElementById("Subcliente").value.trim();
   const unidade = document.getElementById("unidade").value.trim();
   const marca = document.getElementById("marca").value.trim();
   const endereco = document.getElementById("endereco").value.trim();
@@ -50,7 +50,7 @@ async function criarServico() {
       },
       body: JSON.stringify({
         cliente,
-        subgrupo,
+        subcliente,
         unidade: cliente.toLowerCase() === "timao" ? unidade : null,
         marca: cliente.toLowerCase() === "timao" ? marca : null,
         endereco,

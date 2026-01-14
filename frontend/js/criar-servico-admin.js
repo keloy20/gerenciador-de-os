@@ -54,7 +54,7 @@ async function carregarTecnicos() {
 // ===============================
 async function criarServicoAdmin() {
   const cliente = document.getElementById("cliente").value;
-  const subgrupo = document.getElementById("subgrupo").value;
+  const Subcliente = document.getElementById("subcliente").value;
   const unidade = document.getElementById("unidade").value;
   const marca = document.getElementById("marca").value;
   const endereco = document.getElementById("endereco").value;
@@ -76,7 +76,7 @@ async function criarServicoAdmin() {
       },
       body: JSON.stringify({
         cliente,
-        subgrupo,
+        Subcliente,
         unidade,
         marca,
         endereco,

@@ -1,55 +1,29 @@
 const mongoose = require("mongoose");
 
-const ProjectSchema = new mongoose.Schema({
-  cliente: { type: String, required: true },
+const ProjectSchema = new mongoose.Schema(
+  {
+    cliente: String,
+    Subcliente: String,
+    endereco: String,
+    telefone: String,
+    marca: String,
+    unidade: String,
+    detalhamento: String,
+    osNumero: String,
+    status: {
+      type: String,
+      default: "aguardando_tecnico"
+    },
 
-  unidade: { type: String, default: null },
-  marca: { type: String, default: null },
+    tecnico: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
 
-  endereco: String,
-  tipoServico: String,
-
-  tecnico: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true
+    antes: Object,
+    depois: Object
   },
-
-  status: {
-    type: String,
-    enum: ["aguardando_tecnico", "em_andamento", "concluido","cancelado"],
-    default: "aguardando_tecnico"
-  },
-
-  dataServico: {
-    type: Date,
-    default: Date.now
-  },
-
-  antes: {
-    fotos: [String],
-    relatorio: String,
-    observacao: String,
-    data: Date
-  },
-
-  depois: {
-    fotos: [String],
-    relatorio: String,
-    observacao: String,
-    data: Date
-  },
-
-  osNumero: {
-    type: String,
-    unique: true
-  },
-
-  subgrupo: {
-    type: String,
-    default: ""
-  }
-
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("Project", ProjectSchema);

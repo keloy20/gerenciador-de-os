@@ -10,7 +10,7 @@ export interface Service {
   _id: string;
   osNumero: string;
   cliente: string;
-  subgrupo?: string;
+  Subcliente?: string;
   marca?: string;
   unidade?: string;
   endereco: string;
