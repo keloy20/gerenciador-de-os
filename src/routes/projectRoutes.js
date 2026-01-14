@@ -277,4 +277,45 @@ router.put("/tecnico/depois/:id", auth, async (req, res) => {
   }
 });
 
+// ===============================
+// ADMIN - LISTAR TÉCNICOS
+// ===============================
+router.get("/tecnicos", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin" });
+  }
+
+  try {
+    const tecnicos = await User.find({ role: "tecnico" }).select("-senha");
+    res.json(tecnicos);
+  } catch (err) {
+    console.error("ERRO AO LISTAR TÉCNICOS:", err);
+    res.status(500).json({ error: "Erro ao buscar técnicos" });
+  }
+});
+
+// ===============================
+// ADMIN - EXCLUIR TÉCNICO
+// ===============================
+router.delete("/tecnicos/:id", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin" });
+  }
+
+  try {
+    // Desvincula o técnico das OS antes de excluir (IMPORTANTE)
+    await Project.updateMany(
+      { tecnico: req.params.id },
+      { $set: { tecnico: null, status: "aguardando_tecnico" } }
+    );
+
+    await User.findByIdAndDelete(req.params.id);
+
+    res.json({ message: "Técnico excluído com sucesso" });
+  } catch (err) {
+    console.error("ERRO AO EXCLUIR TÉCNICO:", err);
+    res.status(500).json({ error: "Erro ao excluir técnico" });
+  }
+});
+
 module.exports = router;

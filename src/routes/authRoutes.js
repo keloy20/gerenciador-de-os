@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Project = require("../models/Project"); // <<< ADICIONADO
 const auth = require("../middlewares/auth");
 
 // =====================
@@ -36,24 +37,17 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
 // =====================
 // LISTAR TÉCNICOS (ADMIN)
 // =====================
 router.get("/tecnicos", auth, async (req, res) => {
-  console.log("👉 BATEU NA ROTA /auth/tecnicos");
-  console.log("USER ROLE:", req.userRole);
-
   if (req.userRole !== "admin") {
     return res.status(403).json({ error: "Acesso negado" });
   }
 
   try {
     const tecnicos = await User.find({ role: "tecnico" }).select("_id nome email");
-    console.log("TÉCNICOS ENCONTRADOS:", tecnicos.length);
-
     res.json(tecnicos);
-
   } catch (err) {
     console.error("ERRO AO BUSCAR TÉCNICOS:", err);
     res.status(500).json({ error: "Erro ao buscar técnicos" });
@@ -61,7 +55,7 @@ router.get("/tecnicos", auth, async (req, res) => {
 });
 
 // ===============================
-// EXCLUIR TÉCNICO (ADMIN)
+// EXCLUIR TÉCNICO (ADMIN) – CORRIGIDO
 // ===============================
 router.delete("/tecnicos/:id", auth, async (req, res) => {
   if (req.userRole !== "admin") {
@@ -75,6 +69,13 @@ router.delete("/tecnicos/:id", auth, async (req, res) => {
       return res.status(404).json({ error: "Técnico não encontrado" });
     }
 
+    // 🔥 PASSO 1 – Desvincula o técnico das OS
+    await Project.updateMany(
+      { tecnico: req.params.id },
+      { $set: { tecnico: null, status: "aguardando_tecnico" } }
+    );
+
+    // 🔥 PASSO 2 – Exclui o técnico
     await User.findByIdAndDelete(req.params.id);
 
     res.json({ message: "Técnico excluído com sucesso" });
@@ -84,6 +85,5 @@ router.delete("/tecnicos/:id", auth, async (req, res) => {
     res.status(500).json({ error: "Erro ao excluir técnico" });
   }
 });
-
 
 module.exports = router;
