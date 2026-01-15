@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const User = require("../models/User");
 const Project = require("../models/Project");
 const auth = require("../middlewares/auth");
@@ -36,9 +37,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// =====================
-// LISTAR TÉCNICOS (ADMIN)
-// =====================
+
 // ===============================
 // LISTAR TÉCNICOS (ADMIN)
 // ===============================
@@ -94,6 +93,7 @@ router.post("/register", auth, async (req, res) => {
   }
 });
 
+
 // =====================
 // EXCLUIR TÉCNICO (ADMIN)
 // =====================
@@ -103,7 +103,7 @@ router.delete("/tecnicos/:id", auth, async (req, res) => {
       return res.status(403).json({ error: "Apenas admin pode excluir técnico" });
     }
 
-    // Desvincula OS antes
+    // Desvincula OS antes de excluir
     await Project.updateMany(
       { tecnico: req.params.id },
       { $set: { tecnico: null, status: "aguardando_tecnico" } }
