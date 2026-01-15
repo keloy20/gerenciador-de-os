@@ -13,12 +13,11 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // ====================
-// ROTAS
+// ROTAS  (CORRIGIDO AQUI 👇)
 // ====================
-app.use("/auth", require("./src/routes/authRoutes"));
-app.use("/projects", require("./src/routes/projectRoutes"));
-app.use("/clientes", require("./src/routes/clientesRoutes"));
-app.use("/tecnicos", require("./src/routes/tecnicosRoutes")); // 👈 ESSA LINHA É NOVA
+app.use("/auth", require("./routes/authRoutes"));
+app.use("/projects", require("./routes/projectRoutes"));
+app.use("/clientes", require("./routes/clientesRoutes"));
 
 // ====================
 // MONGO
