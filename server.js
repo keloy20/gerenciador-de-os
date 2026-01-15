@@ -3,7 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-const app = express(); // <<< TEM QUE SER A PRIMEIRA COISA
+const app = express(); // <<< OBRIGATORIAMENTE PRIMEIRO
 
 // ====================
 // MIDDLEWARES
