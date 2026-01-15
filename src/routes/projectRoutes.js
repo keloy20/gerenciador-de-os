@@ -242,4 +242,31 @@ router.put("/tecnico/depois/:id", auth, upload.array("fotos"), async (req, res) 
   }
 });
 
+
+// ===============================
+// ADMIN - CANCELAR OS
+// ===============================
+router.put("/admin/cancelar/:id", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin pode cancelar OS" });
+    }
+
+    const projeto = await Project.findById(req.params.id);
+
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    projeto.status = "cancelado";
+    await projeto.save();
+
+    res.json({ message: "OS cancelada com sucesso", projeto });
+
+  } catch (err) {
+    console.error("ERRO AO CANCELAR OS:", err);
+    res.status(500).json({ error: "Erro ao cancelar OS" });
+  }
+});
+
 module.exports = router;
