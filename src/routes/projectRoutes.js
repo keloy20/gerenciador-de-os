@@ -25,6 +25,54 @@ router.get("/admin/all", auth, async (req, res) => {
 });
 
 // ===============================
+// ADMIN - CRIAR OS  ✅ (ESSA É A QUE FALTAVA)
+// ===============================
+router.post("/admin/create", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin pode criar OS" });
+    }
+
+    const {
+      cliente,
+      Subcliente,
+      endereco,
+      telefone,
+      marca,
+      unidade,
+      tecnicoId,
+      detalhamento
+    } = req.body;
+
+    if (!cliente) {
+      return res.status(400).json({ error: "Cliente é obrigatório" });
+    }
+
+    const total = await Project.countDocuments();
+    const ano = new Date().getFullYear();
+    const osNumero = `${String(total + 1).padStart(4, "0")}-${ano}`;
+
+    const projeto = await Project.create({
+      cliente,
+      Subcliente,
+      endereco,
+      telefone,
+      marca,
+      unidade,
+      detalhamento,
+      tecnico: tecnicoId || null,
+      status: "aguardando_tecnico",
+      osNumero
+    });
+
+    res.json(projeto);
+  } catch (err) {
+    console.error("ERRO AO CRIAR OS:", err);
+    res.status(500).json({ error: "Erro ao criar OS" });
+  }
+});
+
+// ===============================
 // ADMIN - VER OS POR ID
 // ===============================
 router.get("/admin/view/:id", auth, async (req, res) => {
