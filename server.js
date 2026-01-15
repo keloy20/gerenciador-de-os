@@ -3,7 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-const app = express(); // <<< OBRIGATORIAMENTE PRIMEIRO
+const app = express(); // SEMPRE primeiro
 
 // ====================
 // MIDDLEWARES
@@ -17,6 +17,7 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // ====================
 app.use("/auth", require("./src/routes/authRoutes"));
 app.use("/projects", require("./src/routes/projectRoutes"));
+app.use("/clientes", require("./src/routes/clientesRoutes")); // <<< 🔥 FALTAVA ISSO AQUI
 
 // ====================
 // MONGO
