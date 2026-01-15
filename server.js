@@ -2,10 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-app.use("/projects", require("./src/routes/projectRoutes"));
 
-
-const app = express();
+const app = express(); // <<< TEM QUE SER A PRIMEIRA COISA
 
 // ====================
 // MIDDLEWARES
@@ -19,8 +17,6 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // ====================
 app.use("/auth", require("./src/routes/authRoutes"));
 app.use("/projects", require("./src/routes/projectRoutes"));
-app.use("/clientes", require("./src/routes/clientesRoutes"));
-app.use("/unidades", require("./src/routes/unidades")); // <<< AQUI É O CERTO
 
 // ====================
 // MONGO
