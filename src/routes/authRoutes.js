@@ -39,19 +39,24 @@ router.post("/login", async (req, res) => {
 // =====================
 // LISTAR TÉCNICOS (ADMIN)
 // =====================
+// ===============================
+// LISTAR TÉCNICOS (ADMIN)
+// ===============================
 router.get("/tecnicos", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
       return res.status(403).json({ error: "Apenas admin" });
     }
 
-    const tecnicos = await User.find({ role: "tecnico" }).select("_id nome email");
+    const tecnicos = await User.find({ role: "tecnico" }).select("-senha");
     res.json(tecnicos);
+
   } catch (err) {
-    console.error("ERRO AO BUSCAR TÉCNICOS:", err);
+    console.error("Erro ao buscar técnicos:", err);
     res.status(500).json({ error: "Erro ao buscar técnicos" });
   }
 });
+
 
 // =====================
 // CRIAR TÉCNICO (ADMIN)
