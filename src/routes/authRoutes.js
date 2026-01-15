@@ -1,92 +1,77 @@
 const express = require("express");
 const router = express.Router();
-const Cliente = require("../models/Cliente");
-const auth = require("../middlewares/auth");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-// ===============================
-// LISTAR TODOS OS CLIENTES (ADMIN)
-// ===============================
-router.get("/", auth, async (req, res) => {
+// =====================
+// LOGIN
+// =====================
+router.post("/login", async (req, res) => {
+  const { email, senha } = req.body;
+
   try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin" });
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ error: "Usuário não encontrado" });
     }
 
-    const clientes = await Cliente.find().sort({ cliente: 1, subcliente: 1 });
-    res.json(clientes);
+    const ok = await bcrypt.compare(senha, user.senha);
 
-  } catch (err) {
-    console.error("Erro ao buscar clientes:", err);
-    res.status(500).json({ error: "Erro ao buscar clientes" });
-  }
-});
-
-// ===============================
-// CRIAR NOVO CLIENTE / SUBCLIENTE
-// ===============================
-router.post("/", auth, async (req, res) => {
-  try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin pode criar cliente" });
+    if (!ok) {
+      return res.status(400).json({ error: "Senha incorreta" });
     }
 
-    const { cliente, subcliente, endereco, telefone, email } = req.body;
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    if (!cliente) {
-      return res.status(400).json({ error: "Cliente é obrigatório" });
-    }
-
-    const novo = await Cliente.create({
-      cliente,
-      subcliente: subcliente || "",
-      endereco: endereco || "",
-      telefone: telefone || "",
-      email: email || "",
+    res.json({
+      token,
+      role: user.role,
+      nome: user.nome,
     });
 
-    res.json(novo);
-
   } catch (err) {
-    console.error("Erro ao criar cliente:", err);
-    res.status(500).json({ error: "Erro ao criar cliente" });
+    console.error("ERRO LOGIN:", err);
+    res.status(500).json({ error: "Erro no login" });
   }
 });
 
-// ===============================
-// BUSCAR SUBCLIENTES POR CLIENTE
-// ===============================
-router.get("/by-cliente/:cliente", auth, async (req, res) => {
+// =====================
+// REGISTRAR USUÁRIO (ADMIN)
+// =====================
+router.post("/register", async (req, res) => {
   try {
-    const nomeCliente = req.params.cliente;
+    const { nome, email, senha, role } = req.body;
 
-    const lista = await Cliente.find({
-      cliente: new RegExp(`^${nomeCliente}$`, "i"),
-    }).sort({ subcliente: 1 });
-
-    res.json(lista);
-
-  } catch (err) {
-    console.error("Erro ao buscar subclientes:", err);
-    res.status(500).json({ error: "Erro ao buscar subclientes" });
-  }
-});
-
-// ===============================
-// EXCLUIR CLIENTE
-// ===============================
-router.delete("/:id", auth, async (req, res) => {
-  try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Apenas admin pode excluir cliente" });
+    const existe = await User.findOne({ email });
+    if (existe) {
+      return res.status(400).json({ error: "Email já cadastrado" });
     }
 
-    await Cliente.findByIdAndDelete(req.params.id);
-    res.json({ message: "Cliente removido com sucesso" });
+    const hash = await bcrypt.hash(senha, 10);
+
+    const user = await User.create({
+      nome,
+      email,
+      senha: hash,
+      role: role || "tecnico",
+    });
+
+    res.json(user);
 
   } catch (err) {
-    console.error("Erro ao excluir cliente:", err);
-    res.status(500).json({ error: "Erro ao excluir cliente" });
+    console.error("ERRO REGISTER:", err);
+    res.status(500).json({ error: "Erro ao registrar usuário" });
   }
 });
 
 module.exports = router;
+
