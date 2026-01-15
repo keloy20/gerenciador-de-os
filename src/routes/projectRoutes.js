@@ -1,19 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const Project = require("../models/Project");
-const User = require("../models/User");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
 
 // ===============================
-// LISTAR TODAS OS (ADMIN)
+// ADMIN - LISTAR TODAS OS
 // ===============================
 router.get("/admin/all", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Acesso negado" });
-  }
-
   try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
     const projetos = await Project.find()
       .populate("tecnico", "nome email")
       .sort({ createdAt: -1 });
@@ -29,11 +28,11 @@ router.get("/admin/all", auth, async (req, res) => {
 // ADMIN - VER OS POR ID
 // ===============================
 router.get("/admin/view/:id", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Acesso negado" });
-  }
-
   try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
     const projeto = await Project.findById(req.params.id).populate("tecnico", "nome email");
 
     if (!projeto) {
@@ -42,109 +41,8 @@ router.get("/admin/view/:id", auth, async (req, res) => {
 
     res.json(projeto);
   } catch (err) {
-    console.error(err);
+    console.error("ERRO VIEW ADMIN:", err);
     res.status(500).json({ error: "Erro ao buscar OS" });
-  }
-});
-
-// ===============================
-// ADMIN - CRIAR OS
-// ===============================
-router.post("/admin/create", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin pode criar OS" });
-  }
-
-  try {
-    const {
-      cliente,
-      Subcliente,
-      endereco,
-      telefone,
-      marca,
-      unidade,
-      tecnicoId,
-      detalhamento
-    } = req.body;
-
-    if (!cliente) {
-      return res.status(400).json({ error: "Cliente é obrigatório" });
-    }
-
-    const total = await Project.countDocuments();
-    const ano = new Date().getFullYear();
-    const osNumero = `${String(total + 1).padStart(4, "0")}-${ano}`;
-
-    const projeto = await Project.create({
-      cliente,
-      Subcliente,
-      endereco,
-      telefone,
-      marca,
-      unidade,
-      detalhamento,
-      tecnico: tecnicoId || null,
-      status: "aguardando_tecnico",
-      osNumero
-    });
-
-    res.json(projeto);
-  } catch (err) {
-    console.error("ERRO AO CRIAR OS:", err);
-    res.status(500).json({ error: "Erro ao criar OS" });
-  }
-});
-
-// ===============================
-// ADMIN - EDITAR OS
-// ===============================
-router.put("/admin/update/:id", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin pode editar OS" });
-  }
-
-  try {
-    const projeto = await Project.findById(req.params.id);
-    if (!projeto) {
-      return res.status(404).json({ error: "OS não encontrada" });
-    }
-
-    Object.assign(projeto, req.body);
-
-    if (req.body.tecnicoId !== undefined) {
-      projeto.tecnico = req.body.tecnicoId || null;
-    }
-
-    await projeto.save();
-
-    res.json({ message: "OS atualizada com sucesso", projeto });
-  } catch (err) {
-    console.error("ERRO EDITAR OS:", err);
-    res.status(500).json({ error: "Erro ao editar OS" });
-  }
-});
-
-// ===============================
-// ADMIN - CANCELAR OS
-// ===============================
-router.put("/admin/cancelar/:id", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin" });
-  }
-
-  try {
-    const projeto = await Project.findById(req.params.id);
-    if (!projeto) {
-      return res.status(404).json({ error: "OS não encontrada" });
-    }
-
-    projeto.status = "cancelado";
-    await projeto.save();
-
-    res.json({ message: "OS cancelada" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao cancelar OS" });
   }
 });
 
@@ -152,15 +50,15 @@ router.put("/admin/cancelar/:id", auth, async (req, res) => {
 // TÉCNICO - LISTAR SUAS OS
 // ===============================
 router.get("/tecnico/my", auth, async (req, res) => {
-  if (req.userRole !== "tecnico") {
-    return res.status(403).json({ error: "Apenas técnico" });
-  }
-
   try {
+    if (req.userRole !== "tecnico") {
+      return res.status(403).json({ error: "Apenas técnico" });
+    }
+
     const projetos = await Project.find({ tecnico: req.userId });
     res.json(projetos);
   } catch (err) {
-    console.error(err);
+    console.error("ERRO MY OS:", err);
     res.status(500).json({ error: "Erro ao buscar OS" });
   }
 });
@@ -169,14 +67,14 @@ router.get("/tecnico/my", auth, async (req, res) => {
 // TÉCNICO - VER OS POR ID
 // ===============================
 router.get("/tecnico/view/:id", auth, async (req, res) => {
-  if (req.userRole !== "tecnico") {
-    return res.status(403).json({ error: "Apenas técnico" });
-  }
-
   try {
+    if (req.userRole !== "tecnico") {
+      return res.status(403).json({ error: "Apenas técnico" });
+    }
+
     const projeto = await Project.findOne({
       _id: req.params.id,
-      tecnico: req.userId
+      tecnico: req.userId,
     });
 
     if (!projeto) {
@@ -185,7 +83,7 @@ router.get("/tecnico/view/:id", auth, async (req, res) => {
 
     res.json(projeto);
   } catch (err) {
-    console.error("ERRO AO BUSCAR OS TÉCNICO:", err);
+    console.error("ERRO VIEW TECNICO:", err);
     res.status(500).json({ error: "Erro ao buscar OS" });
   }
 });
@@ -194,14 +92,14 @@ router.get("/tecnico/view/:id", auth, async (req, res) => {
 // TÉCNICO - ABRIR CHAMADO
 // ===============================
 router.put("/tecnico/abrir/:id", auth, async (req, res) => {
-  if (req.userRole !== "tecnico") {
-    return res.status(403).json({ error: "Apenas técnico" });
-  }
-
   try {
+    if (req.userRole !== "tecnico") {
+      return res.status(403).json({ error: "Apenas técnico" });
+    }
+
     const projeto = await Project.findOne({
       _id: req.params.id,
-      tecnico: req.userId
+      tecnico: req.userId,
     });
 
     if (!projeto) {
@@ -211,25 +109,25 @@ router.put("/tecnico/abrir/:id", auth, async (req, res) => {
     projeto.status = "em_andamento";
     await projeto.save();
 
-    res.json({ message: "Chamado iniciado", projeto });
+    res.json({ message: "Chamado iniciado" });
   } catch (err) {
-    console.error("ERRO AO ABRIR CHAMADO:", err);
-    res.status(500).json({ error: "Erro ao iniciar chamado" });
+    console.error("ERRO ABRIR:", err);
+    res.status(500).json({ error: "Erro ao abrir chamado" });
   }
 });
 
 // ===============================
-// TÉCNICO - SALVAR ANTES
+// TÉCNICO - SALVAR ANTES (COM FOTO)
 // ===============================
 router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) => {
-  if (req.userRole !== "tecnico") {
-    return res.status(403).json({ error: "Apenas técnico" });
-  }
-
   try {
+    if (req.userRole !== "tecnico") {
+      return res.status(403).json({ error: "Apenas técnico" });
+    }
+
     const projeto = await Project.findOne({
       _id: req.params.id,
-      tecnico: req.userId
+      tecnico: req.userId,
     });
 
     if (!projeto) {
@@ -242,16 +140,15 @@ router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) =
       fotos: req.files?.map((f) => ({
         nome: f.originalname,
         tipo: f.mimetype,
-        base64: f.buffer.toString("base64")
-      })) || []
+        base64: f.buffer.toString("base64"),
+      })) || [],
     };
 
     projeto.status = "em_andamento";
 
     await projeto.save();
 
-    res.json({ message: "ANTES salvo com sucesso", projeto });
-
+    res.json({ message: "ANTES salvo com sucesso" });
   } catch (err) {
     console.error("ERRO ANTES:", err);
     res.status(500).json({ error: "Erro ao salvar ANTES" });
@@ -259,17 +156,17 @@ router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) =
 });
 
 // ===============================
-// TÉCNICO - SALVAR DEPOIS
+// TÉCNICO - SALVAR DEPOIS (COM FOTO)
 // ===============================
 router.put("/tecnico/depois/:id", auth, upload.array("fotos"), async (req, res) => {
-  if (req.userRole !== "tecnico") {
-    return res.status(403).json({ error: "Apenas técnico" });
-  }
-
   try {
+    if (req.userRole !== "tecnico") {
+      return res.status(403).json({ error: "Apenas técnico" });
+    }
+
     const projeto = await Project.findOne({
       _id: req.params.id,
-      tecnico: req.userId
+      tecnico: req.userId,
     });
 
     if (!projeto) {
@@ -282,59 +179,18 @@ router.put("/tecnico/depois/:id", auth, upload.array("fotos"), async (req, res) 
       fotos: req.files?.map((f) => ({
         nome: f.originalname,
         tipo: f.mimetype,
-        base64: f.buffer.toString("base64")
-      })) || []
+        base64: f.buffer.toString("base64"),
+      })) || [],
     };
 
     projeto.status = "concluido";
 
     await projeto.save();
 
-    res.json({ message: "DEPOIS salvo com sucesso", projeto });
-
+    res.json({ message: "DEPOIS salvo com sucesso" });
   } catch (err) {
     console.error("ERRO DEPOIS:", err);
     res.status(500).json({ error: "Erro ao salvar DEPOIS" });
-  }
-});
-
-// ===============================
-// ADMIN - LISTAR TÉCNICOS
-// ===============================
-router.get("/tecnicos", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin" });
-  }
-
-  try {
-    const tecnicos = await User.find({ role: "tecnico" }).select("-senha");
-    res.json(tecnicos);
-  } catch (err) {
-    console.error("ERRO AO LISTAR TÉCNICOS:", err);
-    res.status(500).json({ error: "Erro ao buscar técnicos" });
-  }
-});
-
-// ===============================
-// ADMIN - EXCLUIR TÉCNICO
-// ===============================
-router.delete("/tecnicos/:id", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin" });
-  }
-
-  try {
-    await Project.updateMany(
-      { tecnico: req.params.id },
-      { $set: { tecnico: null, status: "aguardando_tecnico" } }
-    );
-
-    await User.findByIdAndDelete(req.params.id);
-
-    res.json({ message: "Técnico excluído com sucesso" });
-  } catch (err) {
-    console.error("ERRO AO EXCLUIR TÉCNICO:", err);
-    res.status(500).json({ error: "Erro ao excluir técnico" });
   }
 });
 
