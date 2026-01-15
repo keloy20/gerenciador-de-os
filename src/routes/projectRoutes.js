@@ -3,6 +3,23 @@ const router = express.Router();
 const Project = require("../models/Project");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
+const cloudinary = require("../config/cloudinary");
+const streamifier = require("streamifier");
+
+function uploadToCloudinary(buffer) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "chamados" },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+}
+
 
 // ===============================
 // ADMIN - LISTAR TODAS OS
