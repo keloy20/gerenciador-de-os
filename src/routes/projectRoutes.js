@@ -286,4 +286,56 @@ router.put("/admin/cancelar/:id", auth, async (req, res) => {
   }
 });
 
+// ===============================
+// ADMIN - ATUALIZAR OS (EDITAR)
+// ===============================
+router.put("/admin/update/:id", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin pode editar OS" });
+    }
+
+    const projeto = await Project.findById(req.params.id);
+
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    const {
+      cliente,
+      Subcliente,
+      endereco,
+      telefone,
+      marca,
+      unidade,
+      detalhamento,
+      status,
+      tecnico,
+      antes,
+      depois,
+    } = req.body;
+
+    if (cliente !== undefined) projeto.cliente = cliente;
+    if (Subcliente !== undefined) projeto.Subcliente = Subcliente;
+    if (endereco !== undefined) projeto.endereco = endereco;
+    if (telefone !== undefined) projeto.telefone = telefone;
+    if (marca !== undefined) projeto.marca = marca;
+    if (unidade !== undefined) projeto.unidade = unidade;
+    if (detalhamento !== undefined) projeto.detalhamento = detalhamento;
+    if (status !== undefined) projeto.status = status;
+    if (tecnico !== undefined) projeto.tecnico = tecnico;
+
+    if (antes !== undefined) projeto.antes = antes;
+    if (depois !== undefined) projeto.depois = depois;
+
+    await projeto.save();
+
+    res.json({ message: "OS atualizada com sucesso", projeto });
+  } catch (err) {
+    console.error("ERRO AO ATUALIZAR OS:", err);
+    res.status(500).json({ error: "Erro ao atualizar OS" });
+  }
+});
+
+
 module.exports = router;
