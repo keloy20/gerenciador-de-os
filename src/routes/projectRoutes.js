@@ -267,5 +267,46 @@ router.put("/admin/fix-os/:id", auth, async (req, res) => {
   }
 });
 
+// ===============================
+// TÉCNICO - ABRIR CHAMADO
+// ===============================
+router.put("/tecnico/abrir/:id", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "tecnico") {
+      return res.status(403).json({ error: "Apenas técnico" });
+    }
+
+    const projeto = await Project.findById(req.params.id);
+
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    // 🔹 se ainda não tiver técnico, vincula
+    if (!projeto.tecnico) {
+      projeto.tecnico = req.userId;
+    }
+
+    // 🔹 segurança
+    if (String(projeto.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "OS não pertence a você" });
+    }
+
+    // 🔹 muda status
+    projeto.status = "em_andamento";
+    await projeto.save();
+
+    res.json({
+      message: "Chamado iniciado",
+      projeto,
+    });
+  } catch (err) {
+    console.error("ERRO ABRIR CHAMADO:", err);
+    res.status(500).json({ error: "Erro ao abrir chamado" });
+  }
+});
+
+
+
 
 module.exports = router;
