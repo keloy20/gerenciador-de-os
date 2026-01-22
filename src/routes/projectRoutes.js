@@ -237,4 +237,35 @@ router.put(
   }
 );
 
+// ===============================
+// ADMIN - RESETAR OS PROBLEMÁTICA
+// ===============================
+router.put("/admin/fix-os/:id", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin" });
+    }
+
+    const projeto = await Project.findById(req.params.id);
+
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    projeto.tecnico = null;
+    projeto.status = "aguardando_tecnico";
+
+    await projeto.save();
+
+    res.json({
+      message: "OS resetada com sucesso",
+      projeto,
+    });
+  } catch (err) {
+    console.error("ERRO FIX OS:", err);
+    res.status(500).json({ error: "Erro ao corrigir OS" });
+  }
+});
+
+
 module.exports = router;
