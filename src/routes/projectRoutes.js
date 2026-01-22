@@ -137,13 +137,21 @@ router.get("/tecnico/view/:id", auth, async (req, res) => {
       return res.status(403).json({ error: "Apenas técnico" });
     }
 
-    const projeto = await Project.findOne({
-      _id: req.params.id,
-      tecnico: req.userId,
-    });
+    // 🔹 Busca apenas pelo ID
+    const projeto = await Project.findById(req.params.id);
 
     if (!projeto) {
       return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    // 🔹 Se ainda não tiver técnico, permite visualizar
+    if (!projeto.tecnico) {
+      return res.json(projeto);
+    }
+
+    // 🔹 Se tiver técnico, precisa ser o mesmo
+    if (String(projeto.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "OS não pertence a este técnico" });
     }
 
     res.json(projeto);
@@ -152,6 +160,7 @@ router.get("/tecnico/view/:id", auth, async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar OS" });
   }
 });
+
 
 // ===============================
 // TÉCNICO - ABRIR CHAMADO
