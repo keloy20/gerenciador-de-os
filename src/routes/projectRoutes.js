@@ -190,13 +190,21 @@ router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) =
       return res.status(403).json({ error: "Apenas técnico" });
     }
 
-    const projeto = await Project.findOne({
-      _id: req.params.id,
-      tecnico: req.userId,
-    });
+    // 🔹 Busca SOMENTE pelo ID
+    const projeto = await Project.findById(req.params.id);
 
     if (!projeto) {
       return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    // 🔹 Se ainda não tiver técnico, vincula automaticamente
+    if (!projeto.tecnico) {
+      projeto.tecnico = req.userId;
+    }
+
+    // 🔹 Se já tiver técnico e não for o mesmo → bloqueia
+    if (String(projeto.tecnico) !== String(req.userId)) {
+      return res.status(403).json({ error: "OS não pertence a este técnico" });
     }
 
     projeto.antes = {
@@ -219,6 +227,7 @@ router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) =
     res.status(500).json({ error: "Erro ao salvar ANTES" });
   }
 });
+
 
 // ===============================
 // TÉCNICO - SALVAR DEPOIS (COM FOTO)
