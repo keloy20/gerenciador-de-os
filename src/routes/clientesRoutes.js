@@ -125,4 +125,49 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
+// ===============================
+// ATUALIZAR CLIENTE
+// ===============================
+router.put("/:id", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin pode editar cliente" });
+  }
+
+  try {
+    const {
+      cliente,
+      subcliente,
+      unidade,
+      marca,
+      endereco,
+      telefone,
+      email,
+    } = req.body;
+
+    const atualizado = await Cliente.findByIdAndUpdate(
+      req.params.id,
+      {
+        cliente,
+        subcliente,
+        unidade,
+        marca,
+        endereco,
+        telefone,
+        email,
+      },
+      { new: true }
+    );
+
+    if (!atualizado) {
+      return res.status(404).json({ error: "Cliente não encontrado" });
+    }
+
+    res.json(atualizado);
+  } catch (err) {
+    console.error("Erro ao atualizar cliente:", err);
+    res.status(500).json({ error: "Erro ao atualizar cliente" });
+  }
+});
+
+
 module.exports = router;
