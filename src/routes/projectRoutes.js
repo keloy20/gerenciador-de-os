@@ -8,25 +8,43 @@ const upload = require("../middlewares/upload");
    ADMIN
 ===================================================== */
 
-// LISTAR TODAS AS OS
+// LISTAR TODAS AS OS (ADMIN)
 router.get("/admin/all", auth, async (req, res) => {
   try {
-    console.log("ADMIN ALL HIT");
-    console.log("USER ID:", req.userId);
-    console.log("USER ROLE:", req.userRole);
+    // segurança
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
 
-    const projetos = await Project.find().limit(5);
+    const projetos = await Project.find()
+      .populate({
+        path: "tecnico",
+        select: "nome email",
+      })
+      .sort({ createdAt: -1 });
 
-    res.json(projetos);
+    // normaliza técnico para evitar ID cru no frontend
+    const normalizados = projetos.map((p) => ({
+      ...p._doc,
+      tecnico: p.tecnico
+        ? {
+            _id: p.tecnico._id,
+            nome: p.tecnico.nome,
+            email: p.tecnico.email,
+          }
+        : null,
+    }));
+
+    res.json(normalizados);
   } catch (err) {
     console.error("ERRO ADMIN ALL:", err);
     res.status(500).json({
       error: "Erro ao buscar OS",
       detalhe: err.message,
-      stack: err.stack,
     });
   }
 });
+
 
 // CRIAR OS
 router.post("/admin/create", auth, async (req, res) => {
