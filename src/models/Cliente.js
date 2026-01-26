@@ -15,7 +15,6 @@ const ClienteSchema = new mongoose.Schema(
 
     marca: {
       type: String,
-      trim: true,
     },
 
     unidade: {
