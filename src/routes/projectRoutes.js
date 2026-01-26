@@ -11,16 +11,20 @@ const upload = require("../middlewares/upload");
 // LISTAR TODAS AS OS
 router.get("/admin/all", auth, async (req, res) => {
   try {
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Acesso negado" });
-    }
-const projetos = await Project.find()
-  .sort({ createdAt: -1 });
+    console.log("ADMIN ALL HIT");
+    console.log("USER ID:", req.userId);
+    console.log("USER ROLE:", req.userRole);
 
+    const projetos = await Project.find().limit(5);
 
     res.json(projetos);
   } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar OS" });
+    console.error("ERRO ADMIN ALL:", err);
+    res.status(500).json({
+      error: "Erro ao buscar OS",
+      detalhe: err.message,
+      stack: err.stack,
+    });
   }
 });
 
