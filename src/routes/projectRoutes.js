@@ -15,12 +15,8 @@ router.get("/admin/all", auth, async (req, res) => {
       return res.status(403).json({ error: "Acesso negado" });
     }
 const projetos = await Project.find()
-  .populate({
-    path: "tecnico",
-    select: "nome email",
-    strictPopulate: false
-  })
   .sort({ createdAt: -1 });
+
 
     res.json(projetos);
   } catch (err) {
