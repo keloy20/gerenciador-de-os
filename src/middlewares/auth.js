@@ -1,6 +1,11 @@
 const jwt = require("jsonwebtoken");
 
 module.exports = function (req, res, next) {
+  // 🔥 LIBERA PREFLIGHT (CORS)
+  if (req.method === "OPTIONS") {
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
