@@ -6,18 +6,20 @@ const cors = require("cors");
 const app = express();
 
 // ====================
-// MIDDLEWARES
+// CORS (OBRIGATÓRIO)
 // ====================
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
+// RESPONDE PREFLIGHT
 app.options("*", cors());
 
+// ====================
+// MIDDLEWARES
+// ====================
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
