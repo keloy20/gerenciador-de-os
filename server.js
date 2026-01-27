@@ -2,13 +2,12 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-app.use("/test", require("./src/routes/pingRoutes"));
 
-
+// ✅ APP PRIMEIRO
 const app = express();
 
 // ====================
-// CORS (OBRIGATÓRIO)
+// CORS
 // ====================
 app.use(cors({
   origin: "*",
@@ -16,7 +15,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// RESPONDE PREFLIGHT
 app.options("*", cors());
 
 // ====================
@@ -26,11 +24,12 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // ====================
-// ROTAS
+// ROTAS (DEPOIS DO APP)
 // ====================
 app.use("/auth", require("./src/routes/authRoutes"));
 app.use("/projects", require("./src/routes/projectRoutes"));
 app.use("/clientes", require("./src/routes/clientesRoutes"));
+app.use("/test", require("./src/routes/pingRoutes"));
 
 // ====================
 // MONGO
