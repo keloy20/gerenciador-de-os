@@ -13,32 +13,28 @@ const { enviarMensagem } = require("../services/whatsapp");
 // ===============================
 // LISTAR TODAS AS OS (ADMIN) — FIX DEFINITIVO
 // ===============================
+// ===============================
+// LISTAR TODAS AS OS (ADMIN) — FINAL
+// ===============================
 router.get("/admin/all", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
       return res.status(403).json({ error: "Apenas admin" });
     }
 
-    const projetos = await Project.find(
-      {},
-      {
-        antes: 0,
-        depois: 0,
-        "antes.fotos": 0,
-        "depois.fotos": 0,
-      }
-    )
+    const projetos = await Project.find({})
+      .select("-antes -depois")
       .sort({ createdAt: -1 })
       .limit(50)
       .lean();
 
-    res.json(projetos);
+    return res.status(200).json(projetos);
+
   } catch (err) {
-    console.error("❌ ADMIN ALL ERROR:", err);
-    res.status(500).json({ error: "Erro ao listar OS" });
+    console.error("❌ ERRO ADMIN ALL:", err);
+    return res.status(500).json({ error: "Erro ao listar OS" });
   }
 });
-
 
 
 
