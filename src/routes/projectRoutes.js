@@ -11,24 +11,29 @@ const { enviarMensagem } = require("../services/whatsapp");
 ===================================================== */
 
 // ===============================
-// LISTAR TODAS AS OS (ADMIN)
+// LISTAR TODAS AS OS (ADMIN) — FIX DEFINITIVO
 // ===============================
-// LISTAR TODAS AS OS (ADMIN)
 router.get("/admin/all", auth, async (req, res) => {
   try {
+    // 🔐 garantia absoluta
+    if (!req.userRole || !req.userId) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
     if (req.userRole !== "admin") {
       return res.status(403).json({ error: "Apenas admin" });
     }
 
-    const projetos = await Project.find()
+    const projetos = await Project.find({})
       .sort({ createdAt: -1 })
-      .limit(100)   // 🔥 ESSENCIAL
-      .lean();      // 🔥 ESSENCIAL
+      .limit(100)
+      .lean();
 
-    return res.json(projetos);
+    return res.status(200).json(projetos);
+
   } catch (err) {
-    console.error("ERRO ADMIN ALL:", err);
-    return res.status(500).json({ error: "Erro ao carregar serviços" });
+    console.error("❌ ERRO ADMIN ALL:", err);
+    return res.status(500).json({ error: "Erro ao carregar OS" });
   }
 });
 
