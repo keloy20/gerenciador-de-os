@@ -6,17 +6,18 @@ const cors = require("cors");
 const app = express();
 
 /* =====================================================
-   CORS  (ÚNICO E CORRETO)
+   CORS — DEFINITIVO (FUNCIONA COM VERCEL, MOBILE, ETC)
 ===================================================== */
 app.use(
   cors({
-    origin: true, // permite Vercel, localhost, Postman, etc
+    origin: true, // reflete a origin automaticamente
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
+// garante preflight
 app.options("*", cors());
 
 /* =====================================================
@@ -33,10 +34,10 @@ app.use("/projects", require("./src/routes/projectRoutes"));
 app.use("/clientes", require("./src/routes/clientesRoutes"));
 
 /* =====================================================
-   ROTA TESTE (DEBUG)
+   TESTE
 ===================================================== */
 app.get("/ping", (req, res) => {
-  res.json({ status: "ok", time: new Date() });
+  res.json({ ok: true });
 });
 
 /* =====================================================
@@ -44,14 +45,13 @@ app.get("/ping", (req, res) => {
 ===================================================== */
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB conectado"))
-  .catch((err) => console.error("❌ Erro MongoDB:", err));
+  .then(() => console.log("✅ Mongo conectado"))
+  .catch((err) => console.error("❌ Erro Mongo:", err));
 
 /* =====================================================
    START
 ===================================================== */
 const PORT = process.env.PORT || 3001;
-
 app.listen(PORT, () => {
-  console.log("🚀 Servidor rodando na porta", PORT);
+  console.log("🚀 Backend rodando na porta", PORT);
 });
