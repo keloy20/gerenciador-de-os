@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 
 const authRoutes = require("./src/routes/authRoutes");
 const projectRoutes = require("./src/routes/projectRoutes");
@@ -9,37 +10,17 @@ const clientesRoutes = require("./src/routes/clientesRoutes");
 const app = express();
 
 /* =====================================================
-   CORS – DEFINITIVO (Render + Vercel + Local)
+   CORS — SIMPLES E FUNCIONAL (SEM CREDENTIALS)
 ===================================================== */
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://nova-versao-pink.vercel.app",
-  "https://nova-versao-coral.vercel.app",
-];
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
+app.options("*", cors());
 
 /* =====================================================
    BODY PARSER
@@ -55,7 +36,7 @@ app.use("/projects", projectRoutes);
 app.use("/clientes", clientesRoutes);
 
 /* =====================================================
-   ROTA DE TESTE
+   TESTE
 ===================================================== */
 app.get("/ping", (req, res) => {
   res.json({ status: "ok", time: new Date() });
@@ -73,7 +54,6 @@ mongoose
    START
 ===================================================== */
 const PORT = process.env.PORT || 3001;
-
 app.listen(PORT, () => {
   console.log("🚀 Servidor rodando na porta", PORT);
 });
