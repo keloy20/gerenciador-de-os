@@ -33,7 +33,7 @@ app.use(
 );
 
 // responde preflight
-app.options("*", cors());
+app.options(/.*/, cors());
 
 /* =====================================================
    BODY PARSER
