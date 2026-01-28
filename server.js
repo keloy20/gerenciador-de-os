@@ -3,23 +3,36 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-const authRoutes = require("./src/routes/authRoutes");
-const projectRoutes = require("./src/routes/projectRoutes");
-const clientesRoutes = require("./src/routes/clientesRoutes");
-
 const app = express();
 
 /* =====================================================
-   CORS — SIMPLES E FUNCIONAL (SEM CREDENTIALS)
+   CORS — DEFINITIVO (RENDER + VERCEL + LOCALHOST)
 ===================================================== */
 app.use(
   cors({
-    origin: "*",
+    origin: (origin, callback) => {
+      // permite Postman, mobile, SSR, etc
+      if (!origin) return callback(null, true);
+
+      // libera qualquer domínio Vercel
+      if (origin.includes("vercel.app")) {
+        return callback(null, true);
+      }
+
+      // libera localhost
+      if (origin.startsWith("http://localhost")) {
+        return callback(null, true);
+      }
+
+      return callback(null, true); // 🔥 NÃO BLOQUEIA
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
+// responde preflight
 app.options("*", cors());
 
 /* =====================================================
@@ -31,12 +44,12 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 /* =====================================================
    ROTAS
 ===================================================== */
-app.use("/auth", authRoutes);
-app.use("/projects", projectRoutes);
-app.use("/clientes", clientesRoutes);
+app.use("/auth", require("./src/routes/authRoutes"));
+app.use("/projects", require("./src/routes/projectRoutes"));
+app.use("/clientes", require("./src/routes/clientesRoutes"));
 
 /* =====================================================
-   TESTE
+   HEALTH CHECK (TESTE)
 ===================================================== */
 app.get("/ping", (req, res) => {
   res.json({ status: "ok", time: new Date() });
@@ -51,9 +64,10 @@ mongoose
   .catch((err) => console.error("❌ Erro Mongo:", err));
 
 /* =====================================================
-   START
+   START (PORTA CERTA DO RENDER)
 ===================================================== */
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
+
 app.listen(PORT, () => {
   console.log("🚀 Servidor rodando na porta", PORT);
 });

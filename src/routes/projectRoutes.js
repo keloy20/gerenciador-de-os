@@ -13,15 +13,25 @@ const { enviarMensagem } = require("../services/whatsapp");
 // ===============================
 // LISTAR TODAS AS OS (ADMIN)
 // ===============================
-router.get("/admin/all", async (req, res) => {
+// LISTAR TODAS AS OS (ADMIN)
+router.get("/admin/all", auth, async (req, res) => {
   try {
-    const projetos = await Project.find().lean();
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin" });
+    }
+
+    const projetos = await Project.find()
+      .sort({ createdAt: -1 })
+      .limit(100)   // 🔥 ESSENCIAL
+      .lean();      // 🔥 ESSENCIAL
+
     return res.json(projetos);
   } catch (err) {
-    console.error("ERRO:", err);
-    return res.status(500).json({ error: "Erro interno" });
+    console.error("ERRO ADMIN ALL:", err);
+    return res.status(500).json({ error: "Erro ao carregar serviços" });
   }
 });
+
 
 
 
@@ -142,9 +152,11 @@ router.get("/tecnico/my", auth, async (req, res) => {
       return res.status(403).json({ error: "Apenas técnico" });
     }
 
-    const projetos = await Project.find({ tecnico: req.userId }).sort({
-      createdAt: -1,
-    });
+   const projetos = await Project.find({ tecnico: req.userId })
+  .sort({ createdAt: -1 })
+  .limit(100)
+  .lean();
+
 
     res.json(projetos);
   } catch (err) {
