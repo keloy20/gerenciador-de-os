@@ -22,18 +22,32 @@ app.options("*", cors());
 // ====================
 // MIDDLEWARES
 // ====================
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://nova-versao-coral.vercel.app",
+];
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: function (origin, callback) {
+      // permite requisições sem origin (Postman, mobile, etc)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
 
-// 🔥 ESSENCIAL PARA PREFLIGHT
+// ESSENCIAL
 app.options("*", cors());
+
 
 
 app.use(express.json({ limit: "50mb" }));
