@@ -2,13 +2,26 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const { iniciarWhatsapp } = require("./src/services/whatsapp");
+
 
 const app = express();
 
 // ====================
 // MIDDLEWARES
 // ====================
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  })
+);
+
+// 🔥 ESSENCIAL PARA PREFLIGHT
+app.options("*", cors());
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -30,7 +43,10 @@ mongoose
 // ====================
 // START
 // ====================
-const PORT = process.env.PORT || 3333;
+const PORT = 3001;
+
+
 app.listen(PORT, () => {
-  console.log("🚀 Servidor rodando na porta " + PORT);
+  console.log("Servidor rodando na porta " + PORT);
+  iniciarWhatsapp(); // 🔥 gera QR Code
 });

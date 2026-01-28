@@ -3,50 +3,32 @@ const router = express.Router();
 const Project = require("../models/Project");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
+const { enviarMensagem } = require("../services/whatsapp");
+
 
 /* =====================================================
    ADMIN
 ===================================================== */
 
+// ===============================
 // LISTAR TODAS AS OS (ADMIN)
-router.get("/admin/all", auth, async (req, res) => {
+// ===============================
+router.get("/admin/all", async (req, res) => {
   try {
-    // segurança
-    if (req.userRole !== "admin") {
-      return res.status(403).json({ error: "Acesso negado" });
-    }
+    const projetos = await Project.find();
 
-    const projetos = await Project.find()
-      .populate({
-        path: "tecnico",
-        select: "nome email",
-      })
-      .sort({ createdAt: -1 });
+    console.log("🔥 TOTAL DE OS NO BANCO:", projetos.length);
 
-    // normaliza técnico para evitar ID cru no frontend
-    const normalizados = projetos.map((p) => ({
-      ...p._doc,
-      tecnico: p.tecnico
-        ? {
-            _id: p.tecnico._id,
-            nome: p.tecnico.nome,
-            email: p.tecnico.email,
-          }
-        : null,
-    }));
-
-    res.json(normalizados);
+    res.json(projetos);
   } catch (err) {
-    console.error("ERRO ADMIN ALL:", err);
-    res.status(500).json({
-      error: "Erro ao buscar OS",
-      detalhe: err.message,
-    });
+    res.status(500).json({ error: "Erro ao buscar OS" });
   }
 });
 
 
-// CRIAR OS
+// ===============================
+// CRIAR OS (ADMIN) + WHATSAPP
+// ===============================
 router.post("/admin/create", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -63,11 +45,26 @@ router.post("/admin/create", auth, async (req, res) => {
       osNumero: `${String(total + 1).padStart(4, "0")}-${ano}`,
     });
 
+    // 📲 ENVIA WHATSAPP PRO TÉCNICO (SE TIVER)
+    if (projeto.tecnico) {
+      const mensagem = `
+📋 *Nova Ordem de Serviço*
+
+🆔 OS: ${projeto.osNumero}
+👤 Cliente: ${projeto.cliente || "Não informado"}
+📌 Status: ${projeto.status}
+      `;
+
+      await enviarMensagem(projeto.tecnico, mensagem);
+    }
+
     res.json(projeto);
   } catch (err) {
+    console.error("ERRO CRIAR OS:", err);
     res.status(500).json({ error: "Erro ao criar OS" });
   }
 });
+
 
 // VER OS (ADMIN)
 router.get("/admin/view/:id", auth, async (req, res) => {
@@ -324,6 +321,27 @@ router.put("/tecnico/abrir/:id", auth, async (req, res) => {
   } catch (err) {
     console.error("ERRO ABRIR CHAMADO:", err);
     res.status(500).json({ error: "Erro ao abrir chamado" });
+  }
+});
+
+// ===============================
+// ADMIN - EXCLUIR OS
+// ===============================
+router.delete("/admin/delete/:id", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin" });
+    }
+
+    const projeto = await Project.findByIdAndDelete(req.params.id);
+
+    if (!projeto) {
+      return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    res.json({ message: "OS excluída com sucesso" });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao excluir OS" });
   }
 });
 
