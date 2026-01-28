@@ -15,15 +15,14 @@ const { enviarMensagem } = require("../services/whatsapp");
 // ===============================
 router.get("/admin/all", async (req, res) => {
   try {
-    const projetos = await Project.find();
-
-    console.log("🔥 TOTAL DE OS NO BANCO:", projetos.length);
-
-    res.json(projetos);
+    const projetos = await Project.find().lean();
+    return res.json(projetos);
   } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar OS" });
+    console.error("ERRO:", err);
+    return res.status(500).json({ error: "Erro interno" });
   }
 });
+
 
 
 // ===============================
