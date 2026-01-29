@@ -37,7 +37,7 @@ router.get("/admin/all", auth, async (req, res) => {
 
 
 // ===============================
-// CRIAR OS (ADMIN) + WHATSAPP
+// CRIAR OS (ADMIN) + WHATSAPP (CORRIGIDO)
 // ===============================
 router.post("/admin/create", auth, async (req, res) => {
   try {
@@ -55,25 +55,38 @@ router.post("/admin/create", auth, async (req, res) => {
       osNumero: `${String(total + 1).padStart(4, "0")}-${ano}`,
     });
 
-    // 📲 ENVIA WHATSAPP PRO TÉCNICO (SE TIVER)
-    if (projeto.tecnico) {
+    // 🔥 POPULA O TÉCNICO (NOME + TELEFONE)
+    const projetoCompleto = await Project.findById(projeto._id).populate(
+      "tecnico",
+      "nome telefone"
+    );
+
+    // 📲 ENVIA WHATSAPP PRO TÉCNICO
+    if (projetoCompleto?.tecnico?.telefone) {
       const mensagem = `
 📋 *Nova Ordem de Serviço*
 
-🆔 OS: ${projeto.osNumero}
-👤 Cliente: ${projeto.cliente || "Não informado"}
-📌 Status: ${projeto.status}
+🆔 OS: ${projetoCompleto.osNumero}
+👤 Cliente: ${projetoCompleto.cliente || "Não informado"}
+📍 Endereço: ${projetoCompleto.endereco || "Não informado"}
+📌 Status: ${projetoCompleto.status}
       `;
 
-      await enviarMensagem(projeto.tecnico, mensagem);
+      await enviarMensagem(
+        projetoCompleto.tecnico.telefone,
+        mensagem
+      );
     }
 
-    res.json(projeto);
+    // 🔁 RETORNA A OS COMPLETA PRO FRONT
+    res.status(201).json(projetoCompleto);
+
   } catch (err) {
     console.error("ERRO CRIAR OS:", err);
     res.status(500).json({ error: "Erro ao criar OS" });
   }
 });
+
 
 
 // VER OS (ADMIN)
