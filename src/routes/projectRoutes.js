@@ -142,26 +142,27 @@ router.put("/admin/update/:id", auth, async (req, res) => {
   }
 });
 
-/* =====================================================
-   TÉCNICO
-===================================================== */
 
-// LISTAR OS DO TÉCNICO
+// ===============================
+// LISTAR OS DO TÉCNICO (LOGADO)
+// ===============================
 router.get("/tecnico/my", auth, async (req, res) => {
   try {
     if (req.userRole !== "tecnico") {
       return res.status(403).json({ error: "Apenas técnico" });
     }
 
-   const projetos = await Project.find({ tecnico: req.userId })
-  .sort({ createdAt: -1 })
-  .limit(100)
-  .lean();
+    const projetos = await Project.find({
+      tecnico: req.userId,
+    })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
 
-
-    res.json(projetos);
+    return res.status(200).json(projetos);
   } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar OS" });
+    console.error("ERRO TECNICO MY:", err);
+    return res.status(500).json({ error: "Erro ao buscar OS do técnico" });
   }
 });
 
