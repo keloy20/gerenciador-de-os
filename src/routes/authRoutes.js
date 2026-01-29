@@ -6,6 +6,47 @@ const User = require("../models/User");
 const router = express.Router();
 
 /* ===========================
+   REGISTER (CRIAR USUÁRIO / TÉCNICO)
+=========================== */
+router.post("/register", async (req, res) => {
+  try {
+    const { nome, email, senha, telefone, role } = req.body;
+
+    if (!nome || !email || !senha) {
+      return res.status(400).json({ error: "Dados obrigatórios faltando" });
+    }
+
+    const usuarioExistente = await User.findOne({ email });
+    if (usuarioExistente) {
+      return res.status(400).json({ error: "Usuário já existe" });
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 10);
+
+    const novoUsuario = new User({
+      nome,
+      email,
+      senha: senhaHash,
+      telefone: telefone || "",
+      role: role || "tecnico",
+    });
+
+    await novoUsuario.save();
+
+    res.status(201).json({
+      _id: novoUsuario._id,
+      nome: novoUsuario.nome,
+      email: novoUsuario.email,
+      telefone: novoUsuario.telefone,
+      role: novoUsuario.role,
+    });
+  } catch (err) {
+    console.error("ERRO REGISTER:", err);
+    res.status(500).json({ error: "Erro no servidor" });
+  }
+});
+
+/* ===========================
    LOGIN
 =========================== */
 router.post("/login", async (req, res) => {
