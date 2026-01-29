@@ -5,15 +5,16 @@ const auth = require("../middlewares/auth");
 
 // ===============================
 // LISTAR TÉCNICOS (ADMIN)
+// URL FINAL: /auth/tecnicos
 // ===============================
-router.get("/admin/tecnicos", auth, async (req, res) => {
+router.get("/auth/tecnicos", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
       return res.status(403).json({ error: "Apenas admin" });
     }
 
     const tecnicos = await User.find({ role: "tecnico" })
-      .select("_id nome email")
+      .select("_id nome email telefone")
       .lean();
 
     res.json(tecnicos);
