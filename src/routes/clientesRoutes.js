@@ -3,9 +3,9 @@ const router = express.Router();
 const Cliente = require("../models/Cliente");
 const auth = require("../middlewares/auth");
 
-// ===============================
-// LISTAR TODOS OS CLIENTES
-// ===============================
+/* =====================================================
+   LISTAR TODOS OS CLIENTES (ADMIN)
+===================================================== */
 router.get("/", auth, async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -24,9 +24,31 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// ===============================
-// CRIAR NOVO CLIENTE / SUBCLIENTE
-// ===============================
+/* =====================================================
+   BUSCAR CLIENTE POR ID (EDITAR)
+===================================================== */
+router.get("/:id", auth, async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Apenas admin" });
+    }
+
+    const cliente = await Cliente.findById(req.params.id);
+
+    if (!cliente) {
+      return res.status(404).json({ error: "Cliente não encontrado" });
+    }
+
+    res.json(cliente);
+  } catch (err) {
+    console.error("Erro ao buscar cliente:", err);
+    res.status(500).json({ error: "Erro ao buscar cliente" });
+  }
+});
+
+/* =====================================================
+   CRIAR NOVO CLIENTE / SUBCLIENTE
+===================================================== */
 router.post("/", auth, async (req, res) => {
   if (req.userRole !== "admin") {
     return res.status(403).json({ error: "Apenas admin pode criar cliente" });
@@ -57,16 +79,16 @@ router.post("/", auth, async (req, res) => {
       email: email || "",
     });
 
-    res.json(novo);
+    res.status(201).json(novo);
   } catch (err) {
     console.error("Erro ao criar cliente:", err);
     res.status(500).json({ error: "Erro ao criar cliente" });
   }
 });
 
-// ===============================
-// BUSCAR SUBCLIENTES POR CLIENTE
-// ===============================
+/* =====================================================
+   BUSCAR SUBCLIENTES POR CLIENTE
+===================================================== */
 router.get("/by-cliente/:cliente", auth, async (req, res) => {
   try {
     const nomeCliente = req.params.cliente;
@@ -82,52 +104,9 @@ router.get("/by-cliente/:cliente", auth, async (req, res) => {
   }
 });
 
-// ===============================
-// ATUALIZAR CLIENTE
-// ===============================
-router.put("/:id", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin pode editar cliente" });
-  }
-
-  try {
-    const cliente = await Cliente.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-
-    if (!cliente) {
-      return res.status(404).json({ error: "Cliente não encontrado" });
-    }
-
-    res.json(cliente);
-  } catch (err) {
-    console.error("Erro ao atualizar cliente:", err);
-    res.status(500).json({ error: "Erro ao atualizar cliente" });
-  }
-});
-
-// ===============================
-// EXCLUIR CLIENTE
-// ===============================
-router.delete("/:id", auth, async (req, res) => {
-  if (req.userRole !== "admin") {
-    return res.status(403).json({ error: "Apenas admin pode excluir cliente" });
-  }
-
-  try {
-    await Cliente.findByIdAndDelete(req.params.id);
-    res.json({ message: "Cliente removido com sucesso" });
-  } catch (err) {
-    console.error("Erro ao excluir cliente:", err);
-    res.status(500).json({ error: "Erro ao excluir cliente" });
-  }
-});
-
-// ===============================
-// ATUALIZAR CLIENTE
-// ===============================
+/* =====================================================
+   ATUALIZAR CLIENTE (EDITAR)
+===================================================== */
 router.put("/:id", auth, async (req, res) => {
   if (req.userRole !== "admin") {
     return res.status(403).json({ error: "Apenas admin pode editar cliente" });
@@ -169,5 +148,21 @@ router.put("/:id", auth, async (req, res) => {
   }
 });
 
+/* =====================================================
+   EXCLUIR CLIENTE
+===================================================== */
+router.delete("/:id", auth, async (req, res) => {
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Apenas admin pode excluir cliente" });
+  }
+
+  try {
+    await Cliente.findByIdAndDelete(req.params.id);
+    res.json({ message: "Cliente removido com sucesso" });
+  } catch (err) {
+    console.error("Erro ao excluir cliente:", err);
+    res.status(500).json({ error: "Erro ao excluir cliente" });
+  }
+});
 
 module.exports = router;
