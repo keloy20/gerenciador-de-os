@@ -11,7 +11,7 @@ const app = express();
 app.use(
   cors({
     origin: (origin, callback) => {
-      // permite Postman, mobile, SSR, etc
+      // libera Postman, mobile, SSR
       if (!origin) return callback(null, true);
 
       // libera qualquer domínio Vercel
@@ -24,7 +24,8 @@ app.use(
         return callback(null, true);
       }
 
-      return callback(null, true); // 🔥 NÃO BLOQUEIA
+      // libera tudo (seguro para API)
+      return callback(null, true);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -32,7 +33,7 @@ app.use(
   })
 );
 
-// responde preflight
+// preflight
 app.options(/.*/, cors());
 
 /* =====================================================
@@ -47,9 +48,10 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/auth", require("./src/routes/authRoutes"));
 app.use("/projects", require("./src/routes/projectRoutes"));
 app.use("/clientes", require("./src/routes/clientesRoutes"));
+app.use(require("./src/routes/tecnicosRoutes")); // 🔥 ADMIN / TECNICOS
 
 /* =====================================================
-   HEALTH CHECK (TESTE)
+   HEALTH CHECK
 ===================================================== */
 app.get("/ping", (req, res) => {
   res.json({ status: "ok", time: new Date() });
@@ -64,7 +66,7 @@ mongoose
   .catch((err) => console.error("❌ Erro Mongo:", err));
 
 /* =====================================================
-   START (PORTA CERTA DO RENDER)
+   START (RENDER)
 ===================================================== */
 const PORT = process.env.PORT || 10000;
 

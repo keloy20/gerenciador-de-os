@@ -10,9 +10,7 @@ const { enviarMensagem } = require("../services/whatsapp");
    ADMIN
 ===================================================== */
 
-// ===============================
-// LISTAR TODAS AS OS (ADMIN) — FIX DEFINITIVO
-// ===============================
+
 // ===============================
 // LISTAR TODAS AS OS (ADMIN) — FINAL
 // ===============================
