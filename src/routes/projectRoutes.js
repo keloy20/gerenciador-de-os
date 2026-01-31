@@ -290,6 +290,9 @@ router.put("/tecnico/abrir/:id", auth, async (req, res) => {
   }
 });
 
+/* =======================
+   AJUSTE AQUI (ANTES)
+======================= */
 router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) => {
   try {
     if (req.userRole !== "tecnico") {
@@ -299,6 +302,10 @@ router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) =
     const projeto = await Project.findById(req.params.id);
     if (!projeto) {
       return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    if (projeto.status === "concluido") {
+      return res.status(400).json({ error: "OS já concluída" });
     }
 
     if (!projeto.tecnico) {
@@ -324,6 +331,9 @@ router.put("/tecnico/antes/:id", auth, upload.array("fotos"), async (req, res) =
   }
 });
 
+/* =======================
+   AJUSTE AQUI (DEPOIS)
+======================= */
 router.put("/tecnico/depois/:id", auth, upload.array("fotos"), async (req, res) => {
   try {
     if (req.userRole !== "tecnico") {
@@ -333,6 +343,10 @@ router.put("/tecnico/depois/:id", auth, upload.array("fotos"), async (req, res) 
     const projeto = await Project.findById(req.params.id);
     if (!projeto) {
       return res.status(404).json({ error: "OS não encontrada" });
+    }
+
+    if (projeto.status !== "em_andamento") {
+      return res.status(400).json({ error: "Finalize o ANTES antes do DEPOIS" });
     }
 
     if (String(projeto.tecnico) !== String(req.userId)) {
