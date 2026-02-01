@@ -16,10 +16,12 @@ router.get("/admin/all", auth, async (req, res) => {
     }
 
     const projetos = await Project.find({})
-      .select("-antes -depois")
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
+  .populate("tecnico", "nome")
+  .select("-antes -depois")
+  .sort({ createdAt: -1 })
+  .limit(50)
+  .lean();
+
 
     res.status(200).json(projetos);
   } catch (err) {
