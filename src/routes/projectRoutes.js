@@ -3,7 +3,7 @@ const router = express.Router();
 const Project = require("../models/Project");
 const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
-const { enviarMensagem } = require("../services/whatsapp");
+//const { enviarMensagem } = require("../services/whatsapp");
 
 /* =====================================================
    ADMIN
@@ -201,8 +201,8 @@ router.get("/tecnico/view/:id", auth, async (req, res) => {
       return res.status(403).json({ error: "Apenas técnico" });
     }
 
-    const projeto = await Project.findById(req.params.id)
-      .select("-antes -depois");
+   const projeto = await Project.findById(req.params.id);
+
 
     if (!projeto) {
       return res.status(404).json({ error: "OS não encontrada" });
