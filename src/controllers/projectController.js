@@ -1,26 +1,57 @@
-const Project = require("../models/Project");
+const mongoose = require("mongoose");
 
-exports.getMyProjects = async (req, res) => {
-  try {
-    const atual = await Project.findOne({
-      tecnico: req.userId,
-      status: "em_andamento"
-    });
+const ProjectSchema = new mongoose.Schema(
+  {
+    cliente: {
+      type: String,
+      required: true
+    },
 
-    const inicioHoje = new Date();
-    inicioHoje.setHours(0, 0, 0, 0);
+    subcliente: {
+      type: String,
+      default: null
+    },
 
-    const fimHoje = new Date();
-    fimHoje.setHours(23, 59, 59, 999);
+    endereco: String,
+    telefone: String,
 
-    const hoje = await Project.find({
-      tecnico: req.userId,
-      dataServico: { $gte: inicioHoje, $lte: fimHoje }
-    }).sort({ createdAt: -1 });
+    marca: String,
+    unidade: String,
 
-    res.json({ atual, hoje });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar projetos" });
-  }
-};
+    detalhamento: String,
+
+    osNumero: String,
+
+    status: {
+      type: String,
+      enum: [
+        "aguardando_tecnico",
+        "em_andamento",
+        "concluido",
+        "cancelado"
+      ],
+      default: "aguardando_tecnico"
+    },
+
+    tecnico: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+
+    antes: {
+      relatorio: String,
+      observacao: String,
+      fotos: [String]
+    },
+
+    depois: {
+      relatorio: String,
+      observacao: String,
+      fotos: [String]
+    }
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Project", ProjectSchema);

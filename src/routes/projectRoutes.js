@@ -41,7 +41,7 @@ router.post("/admin/create", auth, async (req, res) => {
 
     const projeto = await Project.create({
       ...req.body,
-      tecnico: req.body.tecnicoId || null,
+      tecnico: req.body.tecnicoId ? req.body.tecnicoId : null,
       status: "aguardando_tecnico",
       osNumero: `${String(total + 1).padStart(4, "0")}-${ano}`,
     });
@@ -51,7 +51,13 @@ router.post("/admin/create", auth, async (req, res) => {
       "nome telefone"
     );
 
-    if (projetoCompleto?.tecnico?.telefone) {
+    // 🔒 ENVIO DE WHATSAPP PROTEGIDO (NÃO QUEBRA A OS)
+    if (
+      projetoCompleto &&
+      projetoCompleto.tecnico &&
+      typeof projetoCompleto.tecnico === "object" &&
+      projetoCompleto.tecnico.telefone
+    ) {
       const mensagem = `
 📋 *Nova Ordem de Serviço*
 
@@ -61,10 +67,15 @@ router.post("/admin/create", auth, async (req, res) => {
 📌 Status: ${projetoCompleto.status}
       `;
 
-      await enviarMensagem(
-        projetoCompleto.tecnico.telefone,
-        mensagem
-      );
+      try {
+        await enviarMensagem(
+          projetoCompleto.tecnico.telefone,
+          mensagem
+        );
+      } catch (err) {
+        console.error("Erro ao enviar WhatsApp:", err);
+        // ⚠️ NÃO impede a criação da OS
+      }
     }
 
     res.status(201).json(projetoCompleto);
@@ -73,6 +84,7 @@ router.post("/admin/create", auth, async (req, res) => {
     res.status(500).json({ error: "Erro ao criar OS" });
   }
 });
+
 
 router.get("/admin/view/:id", auth, async (req, res) => {
   try {
